@@ -1,16 +1,32 @@
 package ai.neurofleetx.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-
-@Data
-@AllArgsConstructor
 public class LoginResponse {
-private String token;
-private UserDto user;
-@Data
-@AllArgsConstructor
-public static class UserDto {
-    private String email;
-}
+
+    private String token;
+    private String role;
+    private String name;
+    private String message;
+
+    public LoginResponse(String token, String role, String name, String message) {
+        this.token = token;
+        this.role = role;
+        this.name = name;
+        this.message = message;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getMessage() {
+        return message;
+    }
 }

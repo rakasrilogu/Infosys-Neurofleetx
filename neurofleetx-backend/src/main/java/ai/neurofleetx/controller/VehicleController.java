@@ -2,61 +2,43 @@ package ai.neurofleetx.controller;
 
 import ai.neurofleetx.model.Vehicle;
 import ai.neurofleetx.service.VehicleService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@CrossOrigin(origins = "http://localhost:3000") // Allow React dev server
 @RestController
 @RequestMapping("/api/vehicles")
+@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 public class VehicleController {
 
-    private final VehicleService service;
+    @Autowired
+    private VehicleService vehicleService;
 
-    public VehicleController(VehicleService service) {
-        this.service = service;
-    }
-
-    // GET all vehicles
+    // Fetch all vehicles for the Health Monitor
     @GetMapping
-    public ResponseEntity<List<Vehicle>> list(Authentication auth) {
-        if (auth == null || !auth.isAuthenticated()) {
-            return ResponseEntity.status(401).build();
-        }
-        return ResponseEntity.ok(service.findAll());
+    public ResponseEntity<List<Vehicle>> getAll() {
+        List<Vehicle> vehicles = vehicleService.getAllVehicles();
+        return ResponseEntity.ok(vehicles);
     }
 
-    // POST create a new vehicle
+    // Fetch only available vehicles (for Booking)
+    @GetMapping("/available")
+    public ResponseEntity<List<Vehicle>> getAvailable() {
+        return ResponseEntity.ok(vehicleService.getAvailableVehicles());
+    }
+
     @PostMapping
-    public ResponseEntity<?> create(@RequestBody Vehicle body, Authentication auth) {
-        if (auth == null || !auth.isAuthenticated()) {
-            return ResponseEntity.status(401).build();
-        }
-
-        try {
-            Vehicle created = service.create(body);
-            return ResponseEntity.ok(created);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (IllegalStateException e) {
-            return ResponseEntity.status(409).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("Server error: " + e.getMessage());
-        }
+    public ResponseEntity<Vehicle> create(@RequestBody Vehicle vehicle) {
+        return ResponseEntity.ok(vehicleService.saveVehicle(vehicle));
     }
 
-    // Optional: GET vehicle by ID
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getById(@PathVariable Long id, Authentication auth) {
-        if (auth == null || !auth.isAuthenticated()) {
-            return ResponseEntity.status(401).build();
-        }
-        return service.findAll().stream()
-                .filter(v -> v.getId().equals(id))
-                .findFirst()
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    @PutMapping("/{id}/availability")
+    public ResponseEntity<Vehicle> updateAvailability(
+            @PathVariable Integer id, 
+            @RequestParam String availabilityStatus) {
+        Vehicle updated = vehicleService.updateAvailabilityStatus(id, availabilityStatus);
+        return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
     }
 }

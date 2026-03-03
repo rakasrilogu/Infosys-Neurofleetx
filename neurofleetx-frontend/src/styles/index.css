@@ -1,119 +1,46 @@
-.g-auth-bg {
-  min-height: 100vh;
-  min-width: 100vw;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background:
-    radial-gradient(1000px 600px at 10% 10%, rgba(62, 123, 250, 0.08), transparent 60%),
-    radial-gradient(800px 500px at 90% 20%, rgba(234, 67, 53, 0.06), transparent 60%),
-    radial-gradient(900px 500px at 50% 100%, rgba(251, 188, 5, 0.08), transparent 60%),
-    linear-gradient(180deg, #f7f9fc 0%, #eef2f7 100%);
-}
+/* Import Leaflet’s default styles */
+@import "leaflet/dist/leaflet.css";
 
-.g-auth-card {
-  width: 100%;
-  max-width: 360px;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 8px 40px rgba(20, 30, 60, 0.12);
-  padding: 28px 22px 22px;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-.g-auth-logo {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin-bottom: 8px;
-  width: 100%;
-}
-.g-dot { width: 10px; height: 10px; border-radius: 999px; display: inline-block; }
-.g-blue { background: #4285f4; }
-.g-red { background: #ea4335; }
-.g-yellow { background: #fbbc05; }
-.g-green { background: #34a853; }
-.g-brand { margin-left: 6px; font-weight: 800; font-size: 22px; color: #202124; letter-spacing: .2px; }
-
-.g-title { margin: 16px 0 2px; font-size: 24px; font-weight: 700; color: #202124; width: 100%; }
-.g-subtitle { margin: 0 0 18px; font-size: 14px; color: #5f6368; width: 100%; }
-
-.g-error {
-  background: #fdeaea;
-  color: #c62828;
-  border: 1px solid #f5c2c2;
-  padding: 10px 12px;
-  border-radius: 8px;
-  font-size: 14px;
-  margin-top: 8px;
-  margin-bottom: 12px;
-  width: 100%;
-}
-
-.g-form { margin-top: 4px; width: 100%; }
-.g-field { margin-bottom: 12px; width: 100%; position: relative; }
-
-.g-input {
-  width: 100%;
-  padding: 8px 10px;
-  font-size: 14px;
-  color: #202124;
-  background: #fff;
-  border: 1px solid #dadce0;
-  border-radius: 8px;
-  transition: border-color .18s, box-shadow .18s;
-  outline: none;
-  box-sizing: border-box;
-}
-.g-input::placeholder { color: #9aa0a6; }
-.g-input:focus { border-color: #1a73e8; box-shadow: 0 0 0 3px rgba(26,115,232,.15); }
-
-.g-password-toggle {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #1a73e8;
-  font-weight: 600;
-  padding: 0 6px;
-}
-.g-field .g-input.with-toggle { padding-right: 50px; }
-
-.g-actions { margin-top: 6px; width: 100%; display: flex; justify-content: center; }
-.g-btn {
-  min-width: 120px;
-  padding: 9px 14px;
-  background: #1a73e8;
-  color: #fff;
-  font-weight: 700;
-  font-size: 14px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background .18s, transform .02s;
-}
-.g-btn:hover { background: #1558b0; }
-.g-btn:active { transform: translateY(1px); }
-.g-btn[disabled] { opacity: .7; cursor: default; }
-
-.g-help { margin-top: 16px; width: 100%; text-align: center; }
-.g-help a { color: #1a73e8; text-decoration: none; font-size: 13px; }
-.g-help a:hover { text-decoration: underline; }
-
-@media (max-width: 480px) {
-  .g-auth-card {
-    padding: 22px 12px 16px;
-    border-radius: 10px;
-    max-width: 96vw;
+@layer base {
+  html {
+    font-family: 'Inter', sans-serif;
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-gray-100 text-gray-800;
   }
 }
 
+@layer components {
+  .g-brand {
+    @apply text-gray-800 font-semibold;
+  }
+  .stat-card {
+    @apply bg-white rounded-lg shadow-md p-4 transition-transform hover:scale-[1.02];
+  }
+  .g-error {
+    @apply text-red-600 font-medium text-sm p-2 bg-red-50 rounded;
+  }
+  .g-btn {
+    @apply px-4 py-2 rounded-md text-white font-medium transition-colors hover:bg-opacity-90;
+  }
+  .sidebar {
+    @apply w-64 bg-gray-900 text-white fixed h-full p-4;
+  }
+  .header {
+    @apply bg-white shadow p-4 flex justify-between items-center;
+  }
+  .no-underline {
+    text-decoration: none; /* Replaced @apply no-underline */
+  }
+}
+
+/* Extra fix for Leaflet map sizing */
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+}

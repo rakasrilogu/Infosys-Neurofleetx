@@ -1,48 +1,156 @@
 // src/services/api.js
 import axios from "axios";
 
-const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || "http://localhost:5000/api",
-  headers: { "Content-Type": "application/json" },
-}); // baseURL via instance [21][22]
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8081/api";
 
+// ----------------------------------------------------
+// TOKEN HANDLING
+// ----------------------------------------------------
+const getToken = () => {
+  return localStorage.getItem("token") || sessionStorage.getItem("token");
+};
+
+const api = axios.create({
+  baseURL: API_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+// ----------------------------------------------------
+// INTERCEPTORS
+// ----------------------------------------------------
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("nfxtoken");
-    if (token) {
-      config.headers = config.headers || {};
+    const token = getToken();
+    if (token && token !== "null" && token !== "undefined") {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
   (error) => Promise.reject(error)
-); // add Authorization automatically [6][23]
+);
 
-// Auth
-export const loginUser = async ({ email, password }) => {
-  const res = await api.post("/auth/login", { email, password });
-  if (res?.data?.token) {
-    localStorage.setItem("nfxtoken", res.data.token);
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      localStorage.removeItem("token");
+      sessionStorage.removeItem("token");
+      window.location.href = "/login";
+    }
+    return Promise.reject(error);
   }
-  return res.data;
-}; // persist token on login [24][6]
+);
 
-export const signupUser = async ({ name, email, password }) => {
-  const res = await api.post("/auth/register", { name, email, password });
-  return res.data;
-}; // simple register helper [24]
+// ----------------------------------------------------
+// AUTH ENDPOINTS  ✅ SIGNUP + LOGIN FIX
+// ----------------------------------------------------
+export const signup = async (email, password) => {
+  return api.post("/auth/signup", {
+    email,
+    password,
+  });
+};
 
-export const logoutUser = () => localStorage.removeItem("nfxtoken"); // clear token [6]
+export const login = async (email, password) => {
+  return api.post("/auth/login", {
+    email,
+    password,
+  });
+};
 
-// Vehicles
-export const listVehicles = async () => {
-  const res = await api.get("/vehicles");
-  return res.data;
-}; // list [24]
+// ----------------------------------------------------
+// VEHICLE ENDPOINTS
+// ----------------------------------------------------
+api.getVehicles = async () => {
+  const response = await api.get("/vehicles");
+  return response.data;
+};
 
-export const createVehicle = async (payload) => {
-  const res = await api.post("/vehicles", payload);
-  return res.data;
-}; // create [24]
+api.getVehicleById = async (id) => {
+  const response = await api.get(`/vehicles/${id}`);
+  return response.data;
+};
+
+api.updateVehicleLocation = async (id, lat, lng) => {
+  const response = await api.put(`/vehicles/${id}/location`, null, {
+    params: { lat, lng },
+  });
+  return response.data;
+};
+
+api.updateVehicleStatus = async (id, status) => {
+  const response = await api.put(`/vehicles/${id}/status`, null, {
+    params: { status },
+  });
+  return response.data;
+};
+
+// ----------------------------------------------------
+// BOOKING ENDPOINTS
+// ----------------------------------------------------
+api.createBooking = async (bookingData) => {
+  const response = await api.post("/bookings", bookingData);
+  return response.data;
+};
+
+api.getAvailableDrivers = async (customerPhone) => {
+  const response = await api.get("/bookings/availableDrivers", {
+    params: { customerPhone },
+  });
+  return response.data;
+};
+
+api.getRecentBookings = async () => {
+  const response = await api.get("/bookings/recent");
+  return response.data;
+};
+
+api.getUserBookings = async (phone) => {
+  const response = await api.get(`/bookings/user/${phone}`);
+  return response.data;
+};
+
+// ----------------------------------------------------
+// HEALTH CHECK ENDPOINTS
+// ----------------------------------------------------
+api.searchVehicles = async (query) => {
+  const response = await api.get("/vehicles/search", {
+    params: { query },
+  });
+  return response.data;
+};
+
+api.getVehicleByName = async (name) => {
+  const response = await api.get(`/vehicles/name/${name}`);
+  return response.data;
+};
+
+// ----------------------------------------------------
+// ROUTE OPTIMIZATION ENDPOINTS
+// ----------------------------------------------------
+api.optimizeRoute = async (routeRequest) => {
+  const response = await api.post("/routes/optimize", routeRequest);
+  return response.data;
+};
+
+// ----------------------------------------------------
+// NOTIFICATIONS / ALERTS ENDPOINTS
+// ----------------------------------------------------
+//api.getAlerts = async () => {
+  //const response = await api.get("/alerts");
+ // return response.data;
+//};
+
+// ----------------------------------------------------
+// GEOCODING ENDPOINTS
+// ----------------------------------------------------
+api.geocode = async (address) => {
+  const response = await api.get(
+    `/geocode?address=${encodeURIComponent(address)}`
+  );
+  return response.data;
+};
 
 export default api;

@@ -1,58 +1,70 @@
 package ai.neurofleetx.controller;
 
 import ai.neurofleetx.model.User;
-import ai.neurofleetx.service.UserService;
-import org.springframework.http.HttpStatus;
+import ai.neurofleetx.repository.UserRepository;
+import ai.neurofleetx.util.JwtUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
+@CrossOrigin(origins = "http://localhost:3000") // allow frontend
 public class AuthController {
 
-    private final UserService userService;
-    public AuthController(UserService userService) { this.userService = userService; }
+    @Autowired
+    private UserRepository userRepository;
 
-    @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody User user) {
-        if (userService.emailExists(user.getEmail())) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", "Email already exists"));
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    @PostMapping("/signup")
+    public ResponseEntity<?> signup(@RequestBody User user) {
+        if (userRepository.existsByEmail(user.getEmail())) {
+            return ResponseEntity.badRequest().body("Email already registered!");
         }
-        userService.register(user);
-        return ResponseEntity.ok(Map.of("message", "User registered successfully"));
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+
+        // Default role = USER
+        if (user.getRole() == null) user.setRole("USER");
+        user.setRole(user.getRole().toUpperCase());
+
+        userRepository.save(user);
+        return ResponseEntity.ok("User registered successfully");
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
         String email = request.get("email");
         String password = request.get("password");
-        System.out.println("=== LOGIN ATTEMPT email: " + email);
+        String role = request.get("role"); // activeTab sent from frontend
 
-        try {
-            UserDetails userDetails = userService.loadUserByUsername(email);
-            if (!(userDetails instanceof User user) || !userService.checkPassword(user, password)) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("error", "Invalid credentials"));
-            }
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-            String token = userService.issueToken(user);
-            return ResponseEntity.ok(Map.of(
-                    "token", token,
-                    "email", user.getEmail(),
-                    "name", user.getName()
-            ));
-        } catch (UsernameNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "Invalid credentials"));
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Authentication error"));
+        // Password check
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            return ResponseEntity.status(401).body(Map.of("message", "Invalid Email or Password"));
         }
+
+        // Role check
+        if (role != null && !user.getRole().equalsIgnoreCase(role)) {
+            return ResponseEntity.status(401).body(Map.of("message", "Invalid credentials for " + role + " login"));
+        }
+
+        // Generate JWT token
+        String token = jwtUtil.generateToken(user.getEmail(), user.getRole());
+
+        return ResponseEntity.ok(Map.of(
+                "token", token,
+                "role", user.getRole(),
+                "name", user.getName()
+        ));
     }
 }

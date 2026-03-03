@@ -2,50 +2,39 @@ package ai.neurofleetx.service;
 
 import ai.neurofleetx.model.User;
 import ai.neurofleetx.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import java.util.List;
 
 @Service
-public class UserService implements UserDetailsService {
+public class UserService {
 
     private final UserRepository userRepository;
-    private final JwtService jwtService;
 
-    @Autowired
-    public UserService(UserRepository userRepository, JwtService jwtService) {
+    public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
-        this.jwtService = jwtService;
     }
 
-    public boolean emailExists(String email) {
-        return userRepository.findByEmail(email).isPresent();
+    public List<User> findAll() {
+        return userRepository.findAll();
     }
 
-    public void register(User u) {
-        // Using raw passwords for development only (SecurityConfig provides a no-op encoder)
-        userRepository.save(u);
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email).orElse(null);
     }
 
-    public boolean checkPassword(User u, String rawPassword) {
-        System.out.println("=== CHECK PASSWORD raw:'" + rawPassword + "' stored:'" + u.getPassword() + "'");
-        boolean ok = rawPassword.equals(u.getPassword());
-        System.out.println("=== PASSWORD MATCH: " + ok);
-        return ok;
+    public boolean existsByEmail(String email) {
+        return userRepository.existsByEmail(email);
     }
 
-    public String issueToken(User u) {
-        return jwtService.generateToken(u.getEmail());
+    public User save(User user) {
+        return userRepository.save(user);
     }
 
-    @Override
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        System.out.println("=== LOOKUP USER email: " + email);
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
-        System.out.println("=== FOUND USER email: " + user.getEmail());
-        return user;
+    public void deleteById(Long id) {
+        userRepository.deleteById(id);
+    }
+
+    public User findById(Long id) {
+        return userRepository.findById(id).orElse(null);
     }
 }
