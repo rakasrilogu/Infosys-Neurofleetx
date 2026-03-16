@@ -12,9 +12,14 @@ import java.util.Arrays;
 @Component
 public class DataInitializer implements CommandLineRunner {
 
-    @Autowired private UserRepository userRepository;
-    @Autowired private RoadNetworkRepository roadNetworkRepository;
-    @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private RoadNetworkRepository roadNetworkRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Value("${ADMIN_PASSWORD:admin123}")
     private String adminPassword;
@@ -24,6 +29,7 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
+
         // 1. Initialize Admin
         if (userRepository.findByEmail(adminEmail).isEmpty()) {
             User admin = new User();
@@ -33,9 +39,11 @@ public class DataInitializer implements CommandLineRunner {
             admin.setRole("ADMIN");
             userRepository.save(admin);
             System.out.println("✅ Admin Ready.");
+        } else {
+            System.out.println("ℹ️ Admin already exists, skipping.");
         }
 
-        // 2. Initialize Road Network using Repository
+        // 2. Initialize Road Network
         if (roadNetworkRepository.count() == 0) {
             System.out.println("🌱 Seeding Road Network...");
             roadNetworkRepository.saveAll(Arrays.asList(
@@ -46,7 +54,8 @@ public class DataInitializer implements CommandLineRunner {
                 new RoadNetwork("jaipur", "delhi", 270.0)
             ));
             System.out.println("✅ Dijkstra Map Loaded.");
+        } else {
+            System.out.println("ℹ️ Road Network already seeded, skipping.");
         }
     }
 }
-    
