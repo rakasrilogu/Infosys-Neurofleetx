@@ -2,7 +2,10 @@ import React, { useState, useEffect } from "react";
 import { FaPlus, FaTrash } from "react-icons/fa";
 
 const AdminVehicleManager = () => {
-  const API = "http://localhost:8081/api/admin/vehicles";
+  // ✅ Use environment variable instead of localhost
+  const API_BASE = process.env.REACT_APP_API_URL;
+  const API = `${API_BASE}/admin/vehicles`;
+
   const token = localStorage.getItem("token");
 
   const [vehicles, setVehicles] = useState([]);
@@ -168,3 +171,9 @@ const AdminVehicleManager = () => {
 };
 
 export default AdminVehicleManager;
+      
+
+
+  
+
+
