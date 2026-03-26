@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 
 const HealthCheckPage = () => {
+  // ✅ Use environment variable instead of localhost
+  const API_BASE = process.env.REACT_APP_API_URL;
+
   const [vehicles, setVehicles] = useState([]);
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -14,15 +17,15 @@ const HealthCheckPage = () => {
   const fetchVehicles = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token"); // Get fresh token
-      
+      const token = localStorage.getItem("token");
+
       if (!token) {
         setError("No authentication token found. Please log in.");
         setLoading(false);
         return;
       }
 
-      const res = await axios.get("http://localhost:8081/api/vehicles", {
+      const res = await axios.get(`${API_BASE}/vehicles`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -32,16 +35,16 @@ const HealthCheckPage = () => {
       setError(null);
     } catch (err) {
       console.error("Error fetching vehicles:", err);
-      setError("Failed to load fleet data. Check console for details.");
+      setError("Failed to load fleet data.");
     } finally {
       setLoading(false);
     }
   };
 
   const getHealthColor = (health) => {
-    if (health < 40) return "#ef4444"; // Red
-    if (health < 70) return "#f59e0b"; // Orange
-    return "#22c55e"; // Green
+    if (health < 40) return "#ef4444";
+    if (health < 70) return "#f59e0b";
+    return "#22c55e";
   };
 
   if (loading) return <div style={{ padding: 40 }}>🚀 Loading Fleet Status...</div>;
@@ -67,38 +70,39 @@ const HealthCheckPage = () => {
             <tbody>
               {vehicles.length > 0 ? (
                 vehicles.map(v => (
-                  <tr 
-                    key={v.id} 
-                    onClick={() => setSelectedVehicle(v)} 
-                    style={{ 
-                        cursor: "pointer", 
-                        borderBottom: "1px solid #f1f5f9",
-                        backgroundColor: selectedVehicle?.id === v.id ? "#f1f5f9" : "transparent"
+                  <tr
+                    key={v.id}
+                    onClick={() => setSelectedVehicle(v)}
+                    style={{
+                      cursor: "pointer",
+                      borderBottom: "1px solid #f1f5f9",
+                      backgroundColor: selectedVehicle?.id === v.id ? "#f1f5f9" : "transparent"
                     }}
                   >
                     <td style={{ padding: "12px 8px" }}>
-                      <strong>{v.name}</strong><br/>
+                      <strong>{v.name}</strong><br />
                       <small style={{ color: "#64748b" }}>ID #{v.id}</small>
                     </td>
+
                     <td style={{ padding: "12px 8px" }}>
-                        <span style={{ 
-                            padding: "4px 8px", 
-                            borderRadius: 4, 
-                            fontSize: 12, 
-                            background: v.status === "Available" ? "#dcfce7" : "#fee2e2",
-                            color: v.status === "Available" ? "#166534" : "#991b1b"
-                        }}>
-                            {v.status}
-                        </span>
+                      <span style={{
+                        padding: "4px 8px",
+                        borderRadius: 4,
+                        fontSize: 12,
+                        background: v.status === "AVAILABLE" ? "#dcfce7" : "#fee2e2",
+                        color: v.status === "AVAILABLE" ? "#166534" : "#991b1b"
+                      }}>
+                        {v.status}
+                      </span>
                     </td>
+
                     <td style={{ padding: "12px 8px" }}>
                       <div style={{ width: 120, height: 8, background: "#e2e8f0", borderRadius: 5 }}>
                         <div style={{
                           width: `${v.health || 0}%`,
                           height: "100%",
                           background: getHealthColor(v.health || 0),
-                          borderRadius: 5,
-                          transition: "width 0.5s ease-in-out"
+                          borderRadius: 5
                         }} />
                       </div>
                       <small>{v.health}%</small>
@@ -106,7 +110,11 @@ const HealthCheckPage = () => {
                   </tr>
                 ))
               ) : (
-                <tr><td colSpan="3" style={{ padding: 20, textAlign: "center" }}>No vehicles found in database.</td></tr>
+                <tr>
+                  <td colSpan="3" style={{ padding: 20, textAlign: "center" }}>
+                    No vehicles found.
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
@@ -121,14 +129,19 @@ const HealthCheckPage = () => {
               <p><b>Vehicle ID:</b> {selectedVehicle.id}</p>
               <p><b>Primary Driver:</b> {selectedVehicle.driverName || "Not Assigned"}</p>
               <p><b>Current Status:</b> {selectedVehicle.status}</p>
+
               <div style={{ marginTop: 20, padding: 15, background: "#f8fafc", borderRadius: 8 }}>
-                 <p style={{ margin: 0, fontSize: 14 }}><b>Engine Health:</b> {selectedVehicle.health}%</p>
-                 <p style={{ margin: "5px 0 0 0", fontSize: 12, color: "#64748b" }}>Last checked: Just now</p>
+                <p style={{ margin: 0, fontSize: 14 }}>
+                  <b>Engine Health:</b> {selectedVehicle.health}%
+                </p>
+                <p style={{ margin: "5px 0 0 0", fontSize: 12, color: "#64748b" }}>
+                  Last checked: Just now
+                </p>
               </div>
             </div>
           ) : (
             <div style={{ textAlign: "center", color: "#64748b", paddingTop: 50 }}>
-                Select a vehicle to view detailed diagnostics.
+              Select a vehicle to view detailed diagnostics.
             </div>
           )}
         </div>
@@ -138,3 +151,7 @@ const HealthCheckPage = () => {
 };
 
 export default HealthCheckPage;
+      
+
+
+                     
