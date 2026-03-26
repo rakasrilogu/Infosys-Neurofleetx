@@ -2,45 +2,50 @@
 import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Marker, Polyline } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import L from "leaflet";
-import SockJS from "sockjs-client";
-import { over } from "stompjs";
-
-let stompClient = null;
+import WebSocketService from "../services/WebSocketService";
 
 export default function MapView({ vehicleId }) {
   const [routeCoords, setRouteCoords] = useState([]);
 
   useEffect(() => {
-    // Connect to WebSocket
-    const socket = new SockJS("http://localhost:8081/ws");
-    stompClient = over(socket);
-    stompClient.connect({}, () => {
-      // Subscribe to live route updates
-      stompClient.subscribe(`/topic/route/${vehicleId}`, (message) => {
-        const route = JSON.parse(message.body);
-        setRouteCoords(route.coordinates);
+    if (!vehicleId) return;
+
+    // Connect WebSocket
+    WebSocketService.connect(() => {
+      console.log("Connected for route tracking");
+
+      // Subscribe to route updates
+      WebSocketService.subscribe(`/topic/route/${vehicleId}`, (route) => {
+        if (route && route.coordinates) {
+          setRouteCoords(route.coordinates);
+        }
       });
 
       // Request initial route
-      stompClient.send("/app/request-route", {}, vehicleId);
+      WebSocketService.send("/app/request-route", vehicleId);
     });
 
     return () => {
-      if (stompClient) stompClient.disconnect();
+      WebSocketService.disconnect();
     };
   }, [vehicleId]);
 
   return (
-    <MapContainer center={[0, 0]} zoom={13} style={{ height: "500px" }}>
+    <MapContainer center={[11.0168, 76.9558]} zoom={13} style={{ height: "500px" }}>
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution='&copy; OpenStreetMap contributors'
+        attribution="&copy; OpenStreetMap contributors"
       />
+
+      {/* Markers */}
       {routeCoords.map((coord, idx) => (
-        <Marker key={idx} position={coord}></Marker>
+        <Marker key={idx} position={coord} />
       ))}
-      {routeCoords.length > 1 && <Polyline positions={routeCoords} color="blue" />}
+
+      {/* Route Line */}
+      {routeCoords.length > 1 && (
+        <Polyline positions={routeCoords} color="blue" />
+      )}
     </MapContainer>
   );
 }
