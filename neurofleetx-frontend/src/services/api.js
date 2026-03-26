@@ -1,7 +1,8 @@
 // src/services/api.js
 import axios from "axios";
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8081/api";
+// ✅ NO localhost fallback in production
+const API_URL = process.env.REACT_APP_API_URL;
 
 // ----------------------------------------------------
 // TOKEN HANDLING
@@ -44,19 +45,17 @@ api.interceptors.response.use(
 );
 
 // ----------------------------------------------------
-// AUTH ENDPOINTS  ✅ SIGNUP + LOGIN FIX
+// AUTH ENDPOINTS ✅ FIXED
 // ----------------------------------------------------
-export const signup = async (email, password) => {
-  return api.post("/auth/signup", {
-    email,
-    password,
-  });
+export const signup = async (formData) => {
+  return api.post("/auth/signup", formData);
 };
 
-export const login = async (email, password) => {
+export const login = async (email, password, role) => {
   return api.post("/auth/login", {
     email,
     password,
+    role,
   });
 };
 
@@ -64,93 +63,91 @@ export const login = async (email, password) => {
 // VEHICLE ENDPOINTS
 // ----------------------------------------------------
 api.getVehicles = async () => {
-  const response = await api.get("/vehicles");
-  return response.data;
+  const res = await api.get("/vehicles");
+  return res.data;
 };
 
 api.getVehicleById = async (id) => {
-  const response = await api.get(`/vehicles/${id}`);
-  return response.data;
+  const res = await api.get(`/vehicles/${id}`);
+  return res.data;
 };
 
 api.updateVehicleLocation = async (id, lat, lng) => {
-  const response = await api.put(`/vehicles/${id}/location`, null, {
+  const res = await api.put(`/vehicles/${id}/location`, null, {
     params: { lat, lng },
   });
-  return response.data;
+  return res.data;
 };
 
 api.updateVehicleStatus = async (id, status) => {
-  const response = await api.put(`/vehicles/${id}/status`, null, {
+  const res = await api.put(`/vehicles/${id}/status`, null, {
     params: { status },
   });
-  return response.data;
+  return res.data;
 };
 
 // ----------------------------------------------------
 // BOOKING ENDPOINTS
 // ----------------------------------------------------
-api.createBooking = async (bookingData) => {
-  const response = await api.post("/bookings", bookingData);
-  return response.data;
+api.createBooking = async (data) => {
+  const res = await api.post("/bookings", data);
+  return res.data;
 };
 
-api.getAvailableDrivers = async (customerPhone) => {
-  const response = await api.get("/bookings/availableDrivers", {
-    params: { customerPhone },
+api.getAvailableDrivers = async (phone) => {
+  const res = await api.get("/bookings/availableDrivers", {
+    params: { customerPhone: phone },
   });
-  return response.data;
+  return res.data;
 };
 
 api.getRecentBookings = async () => {
-  const response = await api.get("/bookings/recent");
-  return response.data;
+  const res = await api.get("/bookings/recent");
+  return res.data;
 };
 
 api.getUserBookings = async (phone) => {
-  const response = await api.get(`/bookings/user/${phone}`);
-  return response.data;
+  const res = await api.get(`/bookings/user/${phone}`);
+  return res.data;
 };
 
 // ----------------------------------------------------
-// HEALTH CHECK ENDPOINTS
+// HEALTH CHECK
 // ----------------------------------------------------
 api.searchVehicles = async (query) => {
-  const response = await api.get("/vehicles/search", {
+  const res = await api.get("/vehicles/search", {
     params: { query },
   });
-  return response.data;
+  return res.data;
 };
 
 api.getVehicleByName = async (name) => {
-  const response = await api.get(`/vehicles/name/${name}`);
-  return response.data;
+  const res = await api.get(`/vehicles/name/${name}`);
+  return res.data;
 };
 
 // ----------------------------------------------------
-// ROUTE OPTIMIZATION ENDPOINTS
+// ROUTE OPTIMIZATION
 // ----------------------------------------------------
 api.optimizeRoute = async (routeRequest) => {
-  const response = await api.post("/routes/optimize", routeRequest);
-  return response.data;
+  const res = await api.post("/routes/optimize", routeRequest);
+  return res.data;
 };
 
 // ----------------------------------------------------
-// NOTIFICATIONS / ALERTS ENDPOINTS
-// ----------------------------------------------------
-//api.getAlerts = async () => {
-  //const response = await api.get("/alerts");
- // return response.data;
-//};
-
-// ----------------------------------------------------
-// GEOCODING ENDPOINTS
+// GEOCODING
 // ----------------------------------------------------
 api.geocode = async (address) => {
-  const response = await api.get(
-    `/geocode?address=${encodeURIComponent(address)}`
-  );
-  return response.data;
+  const res = await api.get(`/geocode`, {
+    params: { address },
+  });
+  return res.data;
 };
 
 export default api;
+
+
+
+
+
+
