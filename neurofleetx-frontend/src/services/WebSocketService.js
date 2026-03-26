@@ -2,7 +2,8 @@
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 
-const API_WS_URL = process.env.REACT_APP_WS_URL;
+const API_WS_URL =
+  process.env.REACT_APP_WS_URL || "http://localhost:8081";
 
 const WebSocketService = {
   client: null,
@@ -40,7 +41,7 @@ const WebSocketService = {
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
 
-      onConnect: (frame) => {
+      onConnect: () => {
         this.connected = true;
         this.reconnectAttempts = 0;
         console.log("✅ WebSocket connected");
@@ -148,9 +149,3 @@ const WebSocketService = {
 };
 
 export default WebSocketService;
-
-        
- 
-   
-
-
