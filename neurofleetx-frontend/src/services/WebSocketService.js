@@ -2,6 +2,8 @@
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 
+const API_WS_URL = process.env.REACT_APP_WS_URL;
+
 const WebSocketService = {
   client: null,
   connected: false,
@@ -9,7 +11,6 @@ const WebSocketService = {
   reconnectAttempts: 0,
   maxReconnectAttempts: 5,
 
-  // Get token from storage
   getAuthToken() {
     return localStorage.getItem("token") || sessionStorage.getItem("token");
   },
@@ -27,16 +28,14 @@ const WebSocketService = {
       return;
     }
 
-    // ✅ Create client with authentication headers
     this.client = new Client({
-      webSocketFactory: () => new SockJS("http://localhost:8081/ws"),
-      
-      // ✅ Add authentication headers for STOMP connection
+      webSocketFactory: () => new SockJS(`${API_WS_URL}/ws`),
+
       connectHeaders: {
-        'Authorization': `Bearer ${token}`,
-        'X-Requested-With': 'XMLHttpRequest'
+        Authorization: `Bearer ${token}`,
+        "X-Requested-With": "XMLHttpRequest",
       },
-      
+
       reconnectDelay: 5000,
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
@@ -44,10 +43,8 @@ const WebSocketService = {
       onConnect: (frame) => {
         this.connected = true;
         this.reconnectAttempts = 0;
-        console.log("✅ WebSocket connected with authentication");
-        console.log("Connection frame:", frame);
+        console.log("✅ WebSocket connected");
 
-        // Process queued subscriptions
         this.subscriptionQueue.forEach(({ destination, callback }) => {
           this.subscribe(destination, callback);
         });
@@ -59,38 +56,39 @@ const WebSocketService = {
       onStompError: (frame) => {
         this.connected = false;
         console.error("❌ STOMP error:", frame);
-        
-        // Handle authentication errors
-        if (frame.headers && frame.headers.message && 
-            frame.headers.message.includes('Access Denied')) {
-          console.error("🚫 WebSocket authentication failed - redirecting to login");
+
+        if (
+          frame.headers &&
+          frame.headers.message &&
+          frame.headers.message.includes("Access Denied")
+        ) {
           localStorage.removeItem("token");
           sessionStorage.removeItem("token");
-          window.location.href = '/login';
+          window.location.href = "/login";
         }
       },
 
       onWebSocketError: (error) => {
         this.connected = false;
-        console.error("❌ WebSocket connection error:", error);
+        console.error("❌ WebSocket error:", error);
       },
 
       onDisconnect: () => {
         this.connected = false;
         console.log("⚠️ WebSocket disconnected");
-        
-        // Attempt reconnection if not intentional
+
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
           this.reconnectAttempts++;
-          console.log(`🔄 Attempting reconnection ${this.reconnectAttempts}/${this.maxReconnectAttempts}`);
-          setTimeout(() => this.connect(onConnectedCallback), 3000 * this.reconnectAttempts);
+          setTimeout(
+            () => this.connect(onConnectedCallback),
+            3000 * this.reconnectAttempts
+          );
         }
       },
 
-      // ✅ Add debug logging
       debug: (str) => {
-        console.log('STOMP Debug:', str);
-      }
+        console.log("STOMP:", str);
+      },
     });
 
     this.client.activate();
@@ -108,19 +106,15 @@ const WebSocketService = {
 
   subscribe(destination, callback) {
     if (this.client && this.connected) {
-      const subscription = this.client.subscribe(destination, (message) => {
+      return this.client.subscribe(destination, (message) => {
         try {
           const data = JSON.parse(message.body);
-          console.log(`📨 Received from ${destination}:`, data);
           callback(data);
         } catch (err) {
-          console.error("❌ Failed to parse WebSocket message:", err);
+          console.error("❌ JSON parse error:", err);
         }
       });
-      console.log(`📡 Subscribed to ${destination}`);
-      return subscription;
     } else {
-      console.warn(`⚠️ Not connected yet. Queuing subscription to ${destination}`);
       this.subscriptionQueue.push({ destination, callback });
     }
   },
@@ -132,12 +126,11 @@ const WebSocketService = {
         destination,
         body: JSON.stringify(message),
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
-      console.log(`📤 Sent message to ${destination}:`, message);
     } else {
-      console.error("❌ WebSocket not connected. Cannot send to", destination);
+      console.error("❌ WebSocket not connected");
     }
   },
 
@@ -145,14 +138,19 @@ const WebSocketService = {
     return this.connected;
   },
 
-  // ✅ Get connection status for UI
   getConnectionStatus() {
     return {
       connected: this.connected,
       reconnectAttempts: this.reconnectAttempts,
-      maxReconnectAttempts: this.maxReconnectAttempts
+      maxReconnectAttempts: this.maxReconnectAttempts,
     };
-  }
+  },
 };
 
 export default WebSocketService;
+
+        
+ 
+   
+
+
