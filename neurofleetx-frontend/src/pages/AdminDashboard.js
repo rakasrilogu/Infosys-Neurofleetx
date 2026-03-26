@@ -3,7 +3,8 @@ import axios from "axios";
 import AdminSidebar from "../components/AdminSidebar";
 
 const AdminDashboard = () => {
-  const API_BASE = "http://localhost:8081/api/admin";
+  // ✅ Use environment variable instead of localhost
+  const API_BASE = `${process.env.REACT_APP_API_URL}/admin`;
 
   const [vehicles, setVehicles] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -84,7 +85,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // ================= UI =================
   return (
     <div className="flex min-h-screen bg-slate-50">
       <AdminSidebar />
@@ -92,7 +92,7 @@ const AdminDashboard = () => {
       <main className="ml-64 p-10 w-full">
         <h1 className="text-3xl font-black mb-8">FLEET COMMAND</h1>
 
-        {/* ================= ADD FORM ================= */}
+        {/* ADD FORM */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border mb-8">
           <form onSubmit={handleAdd} className="grid grid-cols-5 gap-4">
             <input
@@ -143,7 +143,7 @@ const AdminDashboard = () => {
           </form>
         </div>
 
-        {/* ================= TABLE ================= */}
+        {/* TABLE */}
         <div className="bg-white rounded-2xl shadow-sm border overflow-hidden">
           <table className="w-full text-left">
             <thead className="bg-slate-50 text-[11px] font-black uppercase text-slate-400">
@@ -163,31 +163,12 @@ const AdminDashboard = () => {
                     {v.name} <span className="text-slate-300">#{v.id}</span>
                   </td>
 
-                  <td className="p-5">
-                    <span
-                      className={`px-3 py-1 rounded-full text-[10px] font-black border ${
-                        v.status === "AVAILABLE"
-                          ? "bg-green-50 text-green-600 border-green-200"
-                          : v.status === "IDLE"
-                          ? "bg-yellow-50 text-yellow-600 border-yellow-200"
-                          : "bg-red-50 text-red-600 border-red-200"
-                      }`}
-                    >
-                      {v.status}
-                    </span>
-                  </td>
+                  <td className="p-5">{v.status}</td>
 
-                  {/* HEALTH */}
                   <td className="p-5">
                     <div className="w-32 bg-slate-200 rounded-full h-2">
                       <div
-                        className={`h-2 rounded-full ${
-                          v.health < 40
-                            ? "bg-red-500"
-                            : v.health < 70
-                            ? "bg-yellow-400"
-                            : "bg-green-500"
-                        }`}
+                        className="h-2 rounded-full bg-green-500"
                         style={{ width: `${v.health}%` }}
                       />
                     </div>
@@ -223,7 +204,7 @@ const AdminDashboard = () => {
         </div>
       </main>
 
-      {/* ================= EDIT MODAL ================= */}
+      {/* EDIT MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <form
@@ -271,7 +252,6 @@ const AdminDashboard = () => {
               <option value="MAINTENANCE">MAINTENANCE</option>
             </select>
 
-            {/* HEALTH EDIT */}
             <input
               type="number"
               className="border p-3 rounded-xl"
@@ -303,3 +283,12 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
+
+
+
+                        
+                      
+            
+
+
+
