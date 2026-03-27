@@ -6,12 +6,18 @@ import ai.neurofleetx.service.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.time.LocalDateTime;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/bookings")
-@CrossOrigin(origins = "http://localhost:3000")
+
+// ✅ Allow both local + deployed frontend
+@CrossOrigin(origins = {
+        "http://localhost:3000",
+        "https://infosys-neurofleetx.vercel.app"
+})
 public class BookingController {
 
     @Autowired
@@ -28,21 +34,24 @@ public class BookingController {
             booking.setCustomerPhone((String) payload.get("customerPhone"));
             booking.setPickupLocation((String) payload.get("pickupLocation"));
             booking.setDropLocation((String) payload.get("dropLocation"));
-            
-            // Critical: Ensure React sends YYYY-MM-DDTHH:mm
+
+            // Ensure ISO format from frontend: YYYY-MM-DDTHH:mm
             booking.setScheduledDate(LocalDateTime.parse((String) payload.get("scheduledDate")));
 
             Integer vehicleId = (Integer) payload.get("vehicleId");
 
-            // 1. Save and Link
+            // Save booking
             Booking saved = bookingService.createBookingWithVehicleId(booking, vehicleId);
 
-            // 2. Internal Staff Notifications Only
+            // Notify admin
             emailService.sendBookingNotificationToAdmin(saved);
+
             return ResponseEntity.ok(saved);
+
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.badRequest().body("Server Error: " + e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body("Server Error: " + e.getMessage());
         }
     }
 }
