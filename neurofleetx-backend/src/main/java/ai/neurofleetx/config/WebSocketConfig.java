@@ -12,19 +12,23 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
-        // Added "/queue" for private User-specific notifications
-        config.enableSimpleBroker("/topic", "/queue"); 
-        
+        // Enable message broker for topics and private queues
+        config.enableSimpleBroker("/topic", "/queue");
+
+        // Prefix for messages sent from client to server
         config.setApplicationDestinationPrefixes("/app");
-        
-        // This allows you to use messagingTemplate.convertAndSendToUser()
+
+        // Prefix for private user messages
         config.setUserDestinationPrefix("/user");
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
-                .setAllowedOrigins("http://localhost:3000")
+                .setAllowedOriginPatterns(
+                        "http://localhost:3000",
+                        "https://infosys-neurofleetx.vercel.app"
+                )
                 .withSockJS();
     }
 }
