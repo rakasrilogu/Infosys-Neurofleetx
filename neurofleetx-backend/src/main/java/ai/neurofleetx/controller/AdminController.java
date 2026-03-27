@@ -13,8 +13,14 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin")
-@CrossOrigin(origins = "http://localhost:3000")
-@PreAuthorize("hasRole('ADMIN')") 
+
+// ✅ FIX: Allow both localhost + Vercel frontend
+@CrossOrigin(origins = {
+        "http://localhost:3000",
+        "https://infosys-neurofleetx.vercel.app"
+})
+
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
 
     private final UserService userService;
@@ -28,7 +34,6 @@ public class AdminController {
 
     /**
      * Dashboard Statistics
-     * Matches frontend: stats.totalVehicles, stats.totalUsers
      */
     @GetMapping("/stats")
     public ResponseEntity<?> getStats() {
@@ -52,9 +57,8 @@ public class AdminController {
 
     @PostMapping("/vehicles")
     public ResponseEntity<?> addVehicle(@RequestBody Vehicle vehicle) {
-        // Syncing field names with frontend 'status'
         if (vehicle.getStatus() == null) vehicle.setStatus("AVAILABLE");
-        
+
         vehicle.setCreatedAt(LocalDateTime.now());
         vehicle.setUpdatedAt(LocalDateTime.now());
         return ResponseEntity.ok(vehicleRepository.save(vehicle));
@@ -68,10 +72,10 @@ public class AdminController {
         return vehicleRepository.findById(id).map(vehicle -> {
             vehicle.setName(details.getName());
             vehicle.setDriverName(details.getDriverName());
-            vehicle.setStatus(details.getStatus()); // Matches select dropdown
-            vehicle.setHealth(details.getHealth()); // Matches numeric input
+            vehicle.setStatus(details.getStatus());
+            vehicle.setHealth(details.getHealth());
             vehicle.setUpdatedAt(LocalDateTime.now());
-            
+
             Vehicle updated = vehicleRepository.save(vehicle);
             return ResponseEntity.ok(updated);
         }).orElse(ResponseEntity.notFound().build());
@@ -89,3 +93,4 @@ public class AdminController {
         return ResponseEntity.ok(Map.of("message", "Vehicle deleted successfully"));
     }
 }
+
