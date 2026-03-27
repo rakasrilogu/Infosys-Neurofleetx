@@ -1,6 +1,5 @@
 package ai.neurofleetx.config;
 
-import ai.neurofleetx.config.JwtFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -43,43 +42,64 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
+            // Disable CSRF
             .csrf(AbstractHttpConfigurer::disable)
-            // CORS Configuration to allow React Frontend
+
+            // ✅ FIXED CORS (VERY IMPORTANT)
             .cors(cors -> cors.configurationSource(request -> {
                 CorsConfiguration config = new CorsConfiguration();
-                config.setAllowedOrigins(List.of("http://localhost:3000"));
-                config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-                config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+
+                // Allow both local + deployed frontend
+                config.setAllowedOriginPatterns(List.of(
+                        "http://localhost:3000",
+                        "https://infosys-neurofleetx.vercel.app"
+                ));
+
+                config.setAllowedMethods(List.of(
+                        "GET", "POST", "PUT", "DELETE", "OPTIONS"
+                ));
+
+                config.setAllowedHeaders(List.of("*"));
+
                 config.setAllowCredentials(true);
+
                 return config;
             }))
-            // Stateless Session (JWT)
-            .sessionManagement(session -> 
+
+            // Stateless session (JWT)
+            .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
-            .authorizeHttpRequests(auth -> auth
-                // 1. Allow Pre-flight OPTIONS requests (Browser check before POST)
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                
-                // 2. Public Endpoints
-                .requestMatchers("/api/auth/**").permitAll()
 
-                // 3. User Dashboard Endpoints (Dijkstra & Map)
-                // Protects Route Optimization and Geocoding
+            // Authorization rules
+            .authorizeHttpRequests(auth -> auth
+
+                // Allow OPTIONS (important for browser)
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                // Public endpoints
+                .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/routes/**").permitAll()
                 .requestMatchers("/api/geocode/**").permitAll()
 
-                // 4. Vehicle Management
+                // WebSocket endpoints
+                .requestMatchers("/ws/**").permitAll()
+                .requestMatchers("/topic/**").permitAll()
+                .requestMatchers("/app/**").permitAll()
+
+                // Vehicle endpoints
                 .requestMatchers("/api/vehicles/**").hasAnyRole("USER", "ADMIN")
 
-                // 5. Admin Panel
+                // Admin endpoints
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                
-                // 6. Any other request must be authenticated
+
+                // All others need authentication
                 .anyRequest().authenticated()
             )
-            // JWT Filter added before the standard Username/Password Filter
+
+            // Add JWT filter
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+
             .build();
     }
 }
