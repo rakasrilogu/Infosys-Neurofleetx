@@ -12,7 +12,12 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "http://localhost:3000") // allow frontend
+
+// ✅ Allow both Localhost and Vercel frontend
+@CrossOrigin(origins = {
+        "http://localhost:3000",
+        "https://infosys-neurofleetx.vercel.app"
+})
 public class AuthController {
 
     @Autowired
@@ -29,6 +34,7 @@ public class AuthController {
         if (userRepository.existsByEmail(user.getEmail())) {
             return ResponseEntity.badRequest().body("Email already registered!");
         }
+
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
         // Default role = USER
@@ -43,19 +49,21 @@ public class AuthController {
     public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
         String email = request.get("email");
         String password = request.get("password");
-        String role = request.get("role"); // activeTab sent from frontend
+        String role = request.get("role");
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         // Password check
         if (!passwordEncoder.matches(password, user.getPassword())) {
-            return ResponseEntity.status(401).body(Map.of("message", "Invalid Email or Password"));
+            return ResponseEntity.status(401)
+                    .body(Map.of("message", "Invalid Email or Password"));
         }
 
         // Role check
         if (role != null && !user.getRole().equalsIgnoreCase(role)) {
-            return ResponseEntity.status(401).body(Map.of("message", "Invalid credentials for " + role + " login"));
+            return ResponseEntity.status(401)
+                    .body(Map.of("message", "Invalid credentials for " + role + " login"));
         }
 
         // Generate JWT token
