@@ -42,14 +42,11 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
-            // Disable CSRF
             .csrf(AbstractHttpConfigurer::disable)
 
-            // ✅ FIXED CORS (VERY IMPORTANT)
             .cors(cors -> cors.configurationSource(request -> {
                 CorsConfiguration config = new CorsConfiguration();
 
-                // Allow both local + deployed frontend
                 config.setAllowedOriginPatterns(List.of(
                         "http://localhost:3000",
                         "https://infosys-neurofleetx.vercel.app"
@@ -60,21 +57,21 @@ public class SecurityConfig {
                 ));
 
                 config.setAllowedHeaders(List.of("*"));
-
                 config.setAllowCredentials(true);
 
                 return config;
             }))
 
-            // Stateless session (JWT)
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
 
-            // Authorization rules
             .authorizeHttpRequests(auth -> auth
 
-                // Allow OPTIONS (important for browser)
+                // ✅ Allow root (Render health check)
+                .requestMatchers("/", "/error").permitAll()
+
+                // Allow OPTIONS
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                 // Public endpoints
@@ -82,24 +79,19 @@ public class SecurityConfig {
                 .requestMatchers("/api/routes/**").permitAll()
                 .requestMatchers("/api/geocode/**").permitAll()
 
-                // WebSocket endpoints
+                // WebSocket
                 .requestMatchers("/ws/**").permitAll()
                 .requestMatchers("/topic/**").permitAll()
                 .requestMatchers("/app/**").permitAll()
 
-                // Vehicle endpoints
+                // Protected endpoints
                 .requestMatchers("/api/vehicles/**").hasAnyRole("USER", "ADMIN")
-
-                // Admin endpoints
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
-                // All others need authentication
                 .anyRequest().authenticated()
             )
 
-            // Add JWT filter
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-
             .build();
     }
 }
