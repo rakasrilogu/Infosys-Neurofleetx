@@ -10,35 +10,48 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/vehicles")
-@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
+
+// Allow both Localhost and Vercel frontend
+@CrossOrigin(origins = {
+        "http://localhost:3000",
+        "https://infosys-neurofleetx.vercel.app"
+}, allowCredentials = "true")
 public class VehicleController {
 
     @Autowired
     private VehicleService vehicleService;
 
-    // Fetch all vehicles for the Health Monitor
+    // Fetch all vehicles
     @GetMapping
     public ResponseEntity<List<Vehicle>> getAll() {
         List<Vehicle> vehicles = vehicleService.getAllVehicles();
         return ResponseEntity.ok(vehicles);
     }
 
-    // Fetch only available vehicles (for Booking)
+    // Fetch only available vehicles
     @GetMapping("/available")
     public ResponseEntity<List<Vehicle>> getAvailable() {
         return ResponseEntity.ok(vehicleService.getAvailableVehicles());
     }
 
+    // Create new vehicle
     @PostMapping
     public ResponseEntity<Vehicle> create(@RequestBody Vehicle vehicle) {
         return ResponseEntity.ok(vehicleService.saveVehicle(vehicle));
     }
 
+    // Update vehicle availability
     @PutMapping("/{id}/availability")
     public ResponseEntity<Vehicle> updateAvailability(
-            @PathVariable Integer id, 
+            @PathVariable Integer id,
             @RequestParam String availabilityStatus) {
+
         Vehicle updated = vehicleService.updateAvailabilityStatus(id, availabilityStatus);
-        return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
+
+        if (updated != null) {
+            return ResponseEntity.ok(updated);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 }
