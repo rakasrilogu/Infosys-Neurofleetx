@@ -32,6 +32,17 @@ public class JwtFilter extends OncePerRequestFilter {
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
 
+        String requestPath = request.getRequestURI();
+
+        // Skip JWT filter for auth and WebSocket endpoints
+        if (requestPath.startsWith("/api/auth") ||
+            requestPath.startsWith("/ws") ||
+            requestPath.startsWith("/topic") ||
+            requestPath.startsWith("/app")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         final String authHeader = request.getHeader("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -42,7 +53,6 @@ public class JwtFilter extends OncePerRequestFilter {
         try {
             String jwt = authHeader.substring(7);
 
-            // Guard against literal "null" string sent from frontend
             if (jwt.equals("null") || jwt.isEmpty()) {
                 filterChain.doFilter(request, response);
                 return;
@@ -52,26 +62,34 @@ public class JwtFilter extends OncePerRequestFilter {
 
             if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 if (jwtUtil.validateToken(jwt, userEmail)) {
-                    String role = jwtUtil.extractRole(jwt);
 
+                    String role = jwtUtil.extractRole(jwt);
                     if (role == null || role.isEmpty()) role = "USER";
+
                     String formattedRole = role.startsWith("ROLE_") ? role : "ROLE_" + role;
 
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            userEmail,
-                            null,
-                            Collections.singletonList(new SimpleGrantedAuthority(formattedRole))
+                    UsernamePasswordAuthenticationToken authToken =
+                            new UsernamePasswordAuthenticationToken(
+                                    userEmail,
+                                    null,
+                                    Collections.singletonList(new SimpleGrantedAuthority(formattedRole))
+                            );
+
+                    authToken.setDetails(
+                            new WebAuthenticationDetailsSource().buildDetails(request)
                     );
 
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             }
+
         } catch (Exception e) {
-            // Invalid/expired JWT — log and continue without setting auth
             System.err.println("JWT Filter Error: " + e.getMessage());
         }
 
         filterChain.doFilter(request, response);
     }
 }
+
+
+                   
