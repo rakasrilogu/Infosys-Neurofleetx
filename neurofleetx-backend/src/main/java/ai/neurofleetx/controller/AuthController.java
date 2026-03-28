@@ -12,8 +12,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
-
-// ✅ Allow both Localhost and Vercel frontend
 @CrossOrigin(origins = {
         "http://localhost:3000",
         "https://infosys-neurofleetx.vercel.app"
@@ -34,13 +32,9 @@ public class AuthController {
         if (userRepository.existsByEmail(user.getEmail())) {
             return ResponseEntity.badRequest().body("Email already registered!");
         }
-
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-
-        // Default role = USER
         if (user.getRole() == null) user.setRole("USER");
         user.setRole(user.getRole().toUpperCase());
-
         userRepository.save(user);
         return ResponseEntity.ok("User registered successfully");
     }
@@ -51,8 +45,12 @@ public class AuthController {
         String password = request.get("password");
         String role = request.get("role");
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        // ✅ Fix: return 401 instead of throwing RuntimeException
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(401)
+                    .body(Map.of("message", "Invalid Email or Password"));
+        }
 
         // Password check
         if (!passwordEncoder.matches(password, user.getPassword())) {
@@ -68,7 +66,6 @@ public class AuthController {
 
         // Generate JWT token
         String token = jwtUtil.generateToken(user.getEmail(), user.getRole());
-
         return ResponseEntity.ok(Map.of(
                 "token", token,
                 "role", user.getRole(),
