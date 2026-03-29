@@ -12,10 +12,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = {
-        "http://localhost:3000",
-        "https://infosys-neurofleetx.vercel.app"
-})
 public class AuthController {
 
     @Autowired
@@ -45,26 +41,22 @@ public class AuthController {
         String password = request.get("password");
         String role = request.get("role");
 
-        // ✅ Fix: return 401 instead of throwing RuntimeException
         User user = userRepository.findByEmail(email).orElse(null);
         if (user == null) {
             return ResponseEntity.status(401)
                     .body(Map.of("message", "Invalid Email or Password"));
         }
 
-        // Password check
         if (!passwordEncoder.matches(password, user.getPassword())) {
             return ResponseEntity.status(401)
                     .body(Map.of("message", "Invalid Email or Password"));
         }
 
-        // Role check
         if (role != null && !user.getRole().equalsIgnoreCase(role)) {
             return ResponseEntity.status(401)
                     .body(Map.of("message", "Invalid credentials for " + role + " login"));
         }
 
-        // Generate JWT token
         String token = jwtUtil.generateToken(user.getEmail(), user.getRole());
         return ResponseEntity.ok(Map.of(
                 "token", token,
