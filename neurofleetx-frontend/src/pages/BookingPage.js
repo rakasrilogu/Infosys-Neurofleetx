@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const BookingPage = () => {
-    // ✅ Use environment variable instead of localhost
     const API_BASE = process.env.REACT_APP_API_URL;
 
     const [availableDrivers, setAvailableDrivers] = useState([]);
@@ -221,20 +220,17 @@ const BookingPage = () => {
 };
 
 const styles = {
+    // ✅ FIXED: Removed position:'fixed', top, left, right, bottom, overflowY
+    // The DashboardLayout already handles scroll and positioning via flexbox
     container: {
-        position: 'fixed',
-        top: '57px',
-        left: '240px',
-        right: 0,
-        bottom: 0,
         backgroundColor: '#f1f5f9',
         fontFamily: "'Inter', sans-serif",
-        overflowY: 'auto',
         display: 'flex',
         alignItems: 'flex-start',
         justifyContent: 'center',
         padding: '40px',
         boxSizing: 'border-box',
+        minHeight: '100%',
     },
     inner: {
         display: 'flex',
@@ -350,5 +346,3 @@ const styles = {
 };
 
 export default BookingPage;
-            
-
