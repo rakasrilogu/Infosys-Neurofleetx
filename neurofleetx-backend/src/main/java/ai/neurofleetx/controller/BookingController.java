@@ -38,7 +38,8 @@ public class BookingController {
             // Ensure ISO format from frontend: YYYY-MM-DDTHH:mm
             booking.setScheduledDate(LocalDateTime.parse((String) payload.get("scheduledDate")));
 
-            Integer vehicleId = (Integer) payload.get("vehicleId");
+            Integer vehicleId = Integer.valueOf(payload.get("vehicleId").toString());
+
 
             // Save booking
             Booking saved = bookingService.createBookingWithVehicleId(booking, vehicleId);
