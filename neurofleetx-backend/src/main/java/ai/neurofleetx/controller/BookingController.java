@@ -28,30 +28,62 @@ public class BookingController {
 
     @PostMapping
     public ResponseEntity<?> createBooking(@RequestBody Map<String, Object> payload) {
+
         try {
+
             Booking booking = new Booking();
-            booking.setCustomerName((String) payload.get("customerName"));
-            booking.setCustomerPhone((String) payload.get("customerPhone"));
-            booking.setPickupLocation((String) payload.get("pickupLocation"));
-            booking.setDropLocation((String) payload.get("dropLocation"));
 
-            // Ensure ISO format from frontend: YYYY-MM-DDTHH:mm
-            booking.setScheduledDate(LocalDateTime.parse((String) payload.get("scheduledDate")));
+            // ✅ Customer Details
+            booking.setCustomerName(
+                    payload.get("customerName").toString()
+            );
 
-            Integer vehicleId = Integer.valueOf(payload.get("vehicleId").toString());
+            booking.setCustomerPhone(
+                    payload.get("customerPhone").toString()
+            );
 
+            booking.setPickupLocation(
+                    payload.get("pickupLocation").toString()
+            );
 
-            // Save booking
-            Booking saved = bookingService.createBookingWithVehicleId(booking, vehicleId);
+            booking.setDropLocation(
+                    payload.get("dropLocation").toString()
+            );
 
-            // Notify admin
+            // ✅ Safe Date Parsing
+            String date =
+                    payload.get("scheduledDate")
+                            .toString()
+                            .replace(" ", "T");
+
+            booking.setScheduledDate(
+                    LocalDateTime.parse(date)
+            );
+
+            // ✅ Safe vehicleId Conversion
+            Integer vehicleId =
+                    Integer.valueOf(
+                            payload.get("vehicleId").toString()
+                    );
+
+            // ✅ Save Booking
+            Booking saved =
+                    bookingService.createBookingWithVehicleId(
+                            booking,
+                            vehicleId
+                    );
+
+            // ✅ Send Email to Admin
             emailService.sendBookingNotificationToAdmin(saved);
 
             return ResponseEntity.ok(saved);
 
         } catch (Exception e) {
+
             e.printStackTrace();
-            return ResponseEntity.badRequest()
+
+            return ResponseEntity
+                    .badRequest()
                     .body("Server Error: " + e.getMessage());
         }
     }
