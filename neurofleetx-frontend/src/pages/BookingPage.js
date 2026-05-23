@@ -19,7 +19,7 @@ const BookingPage = () => {
 
     const [selectedDriver, setSelectedDriver] = useState(null);
 
-    // ✅ Fetch Available Drivers
+    // ✅ FETCH DRIVERS
     useEffect(() => {
 
         const fetchDrivers = async () => {
@@ -36,13 +36,29 @@ const BookingPage = () => {
                     }
                 );
 
-                // ✅ Only Available Drivers
-                setAvailableDrivers(
-                    res.data.filter(v =>
-                        (v.availabilityStatus || "")
+                console.log("VEHICLES API:", res.data);
+
+                // ✅ FILTER AVAILABLE DRIVERS
+                const filteredDrivers = res.data.filter(v => {
+
+                    console.log("STATUS CHECK:", v);
+
+                    return (
+                        (
+                            v.status ||
+                            v.availabilityStatus ||
+                            ""
+                        )
                             .toUpperCase() === "AVAILABLE"
-                    )
+                    );
+                });
+
+                console.log(
+                    "AVAILABLE DRIVERS:",
+                    filteredDrivers
                 );
+
+                setAvailableDrivers(filteredDrivers);
 
                 setLoading(false);
 
@@ -58,7 +74,7 @@ const BookingPage = () => {
 
     }, [API_BASE]);
 
-    // ✅ Select Driver
+    // ✅ SELECT DRIVER
     const handleDriverSelect = (driver) => {
 
         setBookingData({
@@ -69,7 +85,7 @@ const BookingPage = () => {
         setSelectedDriver(driver);
     };
 
-    // ✅ Input Change
+    // ✅ HANDLE INPUT CHANGE
     const handleInputChange = (e) => {
 
         setBookingData({
@@ -78,7 +94,7 @@ const BookingPage = () => {
         });
     };
 
-    // ✅ Submit Booking
+    // ✅ SUBMIT BOOKING
     const handleSubmit = async (e) => {
 
         e.preventDefault();
@@ -147,7 +163,7 @@ const BookingPage = () => {
         }
     };
 
-    // ✅ Loading Screen
+    // ✅ LOADING SCREEN
     if (loading) {
 
         return (
@@ -364,6 +380,7 @@ const BookingPage = () => {
 };
 
 const styles = {
+
     container: {
         backgroundColor: '#f1f5f9',
         fontFamily: "'Inter', sans-serif",
