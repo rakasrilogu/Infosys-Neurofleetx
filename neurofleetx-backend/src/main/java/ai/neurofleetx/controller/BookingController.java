@@ -3,6 +3,7 @@ package ai.neurofleetx.controller;
 import ai.neurofleetx.model.Booking;
 import ai.neurofleetx.service.BookingService;
 import ai.neurofleetx.service.EmailService;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,7 +14,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/bookings")
 
-// ✅ Allow both local + deployed frontend
 @CrossOrigin(origins = {
         "http://localhost:3000",
         "https://infosys-neurofleetx.vercel.app"
@@ -27,56 +27,72 @@ public class BookingController {
     private EmailService emailService;
 
     @PostMapping
-    public ResponseEntity<?> createBooking(@RequestBody Map<String, Object> payload) {
+    public ResponseEntity<?> createBooking(
+            @RequestBody Map<String, Object> payload) {
 
         try {
 
+            System.out.println("===== BOOKING PAYLOAD =====");
+            System.out.println(payload);
+
+            // ✅ Validate Vehicle ID
+            if (payload.get("vehicleId") == null ||
+                    payload.get("vehicleId").toString().isEmpty()) {
+
+                return ResponseEntity
+                        .badRequest()
+                        .body("Vehicle ID missing");
+            }
+
             Booking booking = new Booking();
 
-            // ✅ Customer Details
+            // ✅ Customer Name
             booking.setCustomerName(
                     payload.get("customerName").toString()
             );
 
+            // ✅ Customer Phone
             booking.setCustomerPhone(
                     payload.get("customerPhone").toString()
             );
 
+            // ✅ Pickup Location
             booking.setPickupLocation(
                     payload.get("pickupLocation").toString()
             );
 
+            // ✅ Drop Location
             booking.setDropLocation(
                     payload.get("dropLocation").toString()
             );
 
-            // ✅ Safe Date Parsing
-            String date =
-                    payload.get("scheduledDate")
-                            .toString()
-                            .replace(" ", "T");
+            // ✅ Scheduled Date
+            String scheduledDate =
+                    payload.get("scheduledDate").toString();
 
             booking.setScheduledDate(
-                    LocalDateTime.parse(date)
+                    LocalDateTime.parse(scheduledDate)
             );
 
-            // ✅ Safe vehicleId Conversion
+            // ✅ Vehicle ID
             Integer vehicleId =
                     Integer.valueOf(
                             payload.get("vehicleId").toString()
                     );
 
             // ✅ Save Booking
-            Booking saved =
+            Booking savedBooking =
                     bookingService.createBookingWithVehicleId(
                             booking,
                             vehicleId
                     );
 
-            // ✅ Send Email to Admin
-            emailService.sendBookingNotificationToAdmin(saved);
+            // ✅ Send Email
+            emailService.sendBookingNotificationToAdmin(
+                    savedBooking
+            );
 
-            return ResponseEntity.ok(saved);
+            return ResponseEntity.ok(savedBooking);
 
         } catch (Exception e) {
 
@@ -84,7 +100,8 @@ public class BookingController {
 
             return ResponseEntity
                     .badRequest()
-                    .body("Server Error: " + e.getMessage());
+                    .body("Booking Error: " + e.getMessage());
         }
     }
 }
+
