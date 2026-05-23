@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const BookingPage = () => {
+
     const API_BASE = process.env.REACT_APP_API_URL;
 
     const [availableDrivers, setAvailableDrivers] = useState([]);
     const [loading, setLoading] = useState(true);
+
     const [bookingData, setBookingData] = useState({
         customerName: '',
         customerPhone: '',
@@ -14,88 +16,182 @@ const BookingPage = () => {
         scheduledDate: '',
         vehicleId: ''
     });
+
     const [selectedDriver, setSelectedDriver] = useState(null);
 
+    // ✅ Fetch Available Drivers
     useEffect(() => {
-        const fetchDrivers = async () => {
-            try {
-                const res = await axios.get(`${API_BASE}/vehicles`, {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem("token")}`
-                    }
-                });
 
+        const fetchDrivers = async () => {
+
+            try {
+
+                const res = await axios.get(
+                    `${API_BASE}/vehicles`,
+                    {
+                        headers: {
+                            Authorization:
+                                `Bearer ${localStorage.getItem("token")}`
+                        }
+                    }
+                );
+
+                // ✅ Only Available Drivers
                 setAvailableDrivers(
                     res.data.filter(v =>
-                        (v.status || "").toUpperCase() === "AVAILABLE"
+                        (v.availabilityStatus || "")
+                            .toUpperCase() === "AVAILABLE"
                     )
                 );
 
                 setLoading(false);
+
             } catch (err) {
-                console.error("Fetch error", err);
+
+                console.error("Fetch error:", err);
+
                 setLoading(false);
             }
         };
 
         fetchDrivers();
+
     }, [API_BASE]);
 
+    // ✅ Select Driver
     const handleDriverSelect = (driver) => {
-        setBookingData({ ...bookingData, vehicleId: driver.id });
+
+        setBookingData({
+            ...bookingData,
+            vehicleId: driver.id
+        });
+
         setSelectedDriver(driver);
     };
 
+    // ✅ Input Change
     const handleInputChange = (e) => {
+
         setBookingData({
             ...bookingData,
             [e.target.name]: e.target.value
         });
     };
 
+    // ✅ Submit Booking
     const handleSubmit = async (e) => {
+
         e.preventDefault();
 
         if (!bookingData.vehicleId) {
-            alert("Please select a driver from the list!");
+
+            alert("Please select a driver!");
+
             return;
         }
 
         try {
-            const token = localStorage.getItem("token");
 
-            await axios.post(`${API_BASE}/bookings`, bookingData, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            console.log(
+                "BOOKING DATA:",
+                bookingData
+            );
+
+            const token =
+                localStorage.getItem("token");
+
+            const response = await axios.post(
+                `${API_BASE}/bookings`,
+                bookingData,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json"
+                    }
+                }
+            );
+
+            console.log(
+                "BOOKING SUCCESS:",
+                response.data
+            );
 
             alert("Booking Confirmed!");
+
             window.location.reload();
+
         } catch (err) {
-            console.error(err);
-            alert("Booking failed. Please check details.");
+
+            console.error(
+                "FULL ERROR:",
+                err
+            );
+
+            if (err.response) {
+
+                console.log(
+                    "ERROR RESPONSE:",
+                    err.response.data
+                );
+
+                alert(
+                    typeof err.response.data === "string"
+                        ? err.response.data
+                        : JSON.stringify(err.response.data)
+                );
+
+            } else {
+
+                alert(err.message);
+            }
         }
     };
 
-    if (loading)
-        return <div style={styles.loading}>SYNCING FLEET...</div>;
+    // ✅ Loading Screen
+    if (loading) {
+
+        return (
+            <div style={styles.loading}>
+                SYNCING FLEET...
+            </div>
+        );
+    }
 
     return (
+
         <div style={styles.container}>
+
             <div style={styles.inner}>
+
+                {/* LEFT FORM */}
+
                 <div style={styles.formCard}>
+
                     <header style={styles.header}>
-                        <h1 style={styles.title}>Dispatch Center</h1>
+
+                        <h1 style={styles.title}>
+                            Dispatch Center
+                        </h1>
+
                         <p style={styles.subtitle}>
                             Create a new trip assignment
                         </p>
+
                     </header>
 
-                    <form onSubmit={handleSubmit} style={styles.form}>
+                    <form
+                        onSubmit={handleSubmit}
+                        style={styles.form}
+                    >
+
                         <div style={styles.inputRow}>
+
                             <div style={styles.inputGroup}>
+
                                 <label style={styles.label}>
                                     Customer Name
                                 </label>
+
                                 <input
                                     name="customerName"
                                     placeholder="Full Name"
@@ -103,12 +199,15 @@ const BookingPage = () => {
                                     style={styles.input}
                                     required
                                 />
+
                             </div>
 
                             <div style={styles.inputGroup}>
+
                                 <label style={styles.label}>
                                     Phone Number
                                 </label>
+
                                 <input
                                     name="customerPhone"
                                     placeholder="+91..."
@@ -116,39 +215,49 @@ const BookingPage = () => {
                                     style={styles.input}
                                     required
                                 />
+
                             </div>
+
                         </div>
 
                         <div style={styles.inputGroup}>
+
                             <label style={styles.label}>
                                 Pickup Location
                             </label>
+
                             <input
                                 name="pickupLocation"
-                                placeholder="Enter pickup address"
+                                placeholder="Pickup Address"
                                 onChange={handleInputChange}
                                 style={styles.input}
                                 required
                             />
+
                         </div>
 
                         <div style={styles.inputGroup}>
+
                             <label style={styles.label}>
                                 Drop Location
                             </label>
+
                             <input
                                 name="dropLocation"
-                                placeholder="Enter destination"
+                                placeholder="Destination"
                                 onChange={handleInputChange}
                                 style={styles.input}
                                 required
                             />
+
                         </div>
 
                         <div style={styles.inputGroup}>
+
                             <label style={styles.label}>
                                 Scheduled Departure
                             </label>
+
                             <input
                                 name="scheduledDate"
                                 type="datetime-local"
@@ -156,72 +265,105 @@ const BookingPage = () => {
                                 style={styles.input}
                                 required
                             />
+
                         </div>
 
-                        <button type="submit" style={styles.submitBtn}>
-                            CONFIRM TRIP{" "}
+                        <button
+                            type="submit"
+                            style={styles.submitBtn}
+                        >
+
+                            CONFIRM TRIP
+
                             {selectedDriver
-                                ? `WITH ${selectedDriver.driverName.toUpperCase()}`
+                                ? ` WITH ${selectedDriver.driverName.toUpperCase()}`
                                 : ""}
+
                         </button>
+
                     </form>
+
                 </div>
 
+                {/* RIGHT DRIVER PANEL */}
+
                 <div style={styles.driverList}>
+
                     <div style={styles.listHeader}>
-                        <h3 style={{ margin: 0, color: '#0f172a' }}>
+
+                        <h3 style={{
+                            margin: 0,
+                            color: '#0f172a'
+                        }}>
                             Available Drivers
                         </h3>
+
                         <span style={styles.badge}>
                             {availableDrivers.length} Online
                         </span>
+
                     </div>
 
                     <div style={styles.scrollContainer}>
-                        {availableDrivers.map(d => (
+
+                        {availableDrivers.map(driver => (
+
                             <div
-                                key={d.id}
-                                onClick={() => handleDriverSelect(d)}
+                                key={driver.id}
+                                onClick={() =>
+                                    handleDriverSelect(driver)
+                                }
                                 style={{
                                     ...styles.driverCard,
+
                                     border:
-                                        bookingData.vehicleId === d.id
+                                        bookingData.vehicleId === driver.id
                                             ? '2px solid #4f46e5'
                                             : '1px solid #e2e8f0',
+
                                     backgroundColor:
-                                        bookingData.vehicleId === d.id
+                                        bookingData.vehicleId === driver.id
                                             ? '#f5f3ff'
                                             : 'white'
                                 }}
                             >
+
                                 <div style={styles.avatar}>
-                                    {d.driverName.charAt(0)}
+                                    {driver.driverName.charAt(0)}
                                 </div>
 
                                 <div style={styles.driverInfo}>
+
                                     <span style={styles.dName}>
-                                        {d.driverName}
+                                        {driver.driverName}
                                     </span>
+
                                     <span style={styles.vName}>
-                                        {d.name} • #{d.id}
+                                        {driver.name} • #{driver.id}
                                     </span>
+
                                 </div>
 
-                                {bookingData.vehicleId === d.id && (
-                                    <div style={styles.check}>✓</div>
+                                {bookingData.vehicleId === driver.id && (
+                                    <div style={styles.check}>
+                                        ✓
+                                    </div>
                                 )}
+
                             </div>
                         ))}
+
                     </div>
+
                 </div>
+
             </div>
+
         </div>
     );
 };
 
 const styles = {
-    // ✅ FIXED: Removed position:'fixed', top, left, right, bottom, overflowY
-    // The DashboardLayout already handles scroll and positioning via flexbox
     container: {
         backgroundColor: '#f1f5f9',
         fontFamily: "'Inter', sans-serif",
@@ -232,6 +374,7 @@ const styles = {
         boxSizing: 'border-box',
         minHeight: '100%',
     },
+
     inner: {
         display: 'flex',
         gap: '24px',
@@ -239,30 +382,66 @@ const styles = {
         maxWidth: '1100px',
         alignItems: 'flex-start',
     },
+
     formCard: {
         flex: '1',
         backgroundColor: '#ffffff',
         borderRadius: '24px',
         padding: '40px',
-        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05)',
-        display: 'flex',
-        flexDirection: 'column'
+        boxShadow: '0 10px 25px -5px rgba(0,0,0,0.05)',
     },
-    header: { marginBottom: '32px' },
-    title: { fontSize: '28px', fontWeight: '800', color: '#0f172a', margin: 0 },
-    subtitle: { color: '#64748b', fontSize: '14px', marginTop: '4px' },
-    form: { display: 'flex', flexDirection: 'column', gap: '20px' },
-    inputRow: { display: 'flex', gap: '16px' },
-    inputGroup: { display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 },
-    label: { fontSize: '12px', fontWeight: '700', color: '#475569', textTransform: 'uppercase' },
+
+    header: {
+        marginBottom: '32px'
+    },
+
+    title: {
+        fontSize: '28px',
+        fontWeight: '800',
+        color: '#0f172a',
+        margin: 0
+    },
+
+    subtitle: {
+        color: '#64748b',
+        fontSize: '14px',
+        marginTop: '4px'
+    },
+
+    form: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '20px'
+    },
+
+    inputRow: {
+        display: 'flex',
+        gap: '16px'
+    },
+
+    inputGroup: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px',
+        flex: 1
+    },
+
+    label: {
+        fontSize: '12px',
+        fontWeight: '700',
+        color: '#475569',
+        textTransform: 'uppercase'
+    },
+
     input: {
         padding: '14px 16px',
         borderRadius: '12px',
         border: '1.5px solid #e2e8f0',
         fontSize: '15px',
-        outline: 'none',
-        backgroundColor: '#f8fafc'
+        backgroundColor: '#f8fafc',
+        outline: 'none'
     },
+
     submitBtn: {
         marginTop: '12px',
         backgroundColor: '#4f46e5',
@@ -274,22 +453,23 @@ const styles = {
         fontSize: '16px',
         cursor: 'pointer'
     },
+
     driverList: {
         width: '340px',
         flexShrink: 0,
         backgroundColor: '#ffffff',
         borderRadius: '24px',
         padding: '24px',
-        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05)',
-        display: 'flex',
-        flexDirection: 'column'
+        boxShadow: '0 10px 25px -5px rgba(0,0,0,0.05)',
     },
+
     listHeader: {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: '20px'
     },
+
     badge: {
         backgroundColor: '#dcfce7',
         color: '#15803d',
@@ -298,12 +478,13 @@ const styles = {
         fontSize: '11px',
         fontWeight: '800'
     },
+
     scrollContainer: {
         display: 'flex',
         flexDirection: 'column',
-        gap: '12px',
-        overflowY: 'auto'
+        gap: '12px'
     },
+
     driverCard: {
         display: 'flex',
         alignItems: 'center',
@@ -312,6 +493,7 @@ const styles = {
         cursor: 'pointer',
         position: 'relative'
     },
+
     avatar: {
         width: '40px',
         height: '40px',
@@ -324,15 +506,30 @@ const styles = {
         fontWeight: 'bold',
         marginRight: '16px'
     },
-    driverInfo: { display: 'flex', flexDirection: 'column' },
-    dName: { fontWeight: '700', color: '#1e293b', fontSize: '15px' },
-    vName: { fontSize: '12px', color: '#64748b' },
+
+    driverInfo: {
+        display: 'flex',
+        flexDirection: 'column'
+    },
+
+    dName: {
+        fontWeight: '700',
+        color: '#1e293b',
+        fontSize: '15px'
+    },
+
+    vName: {
+        fontSize: '12px',
+        color: '#64748b'
+    },
+
     check: {
         position: 'absolute',
         right: '16px',
         color: '#4f46e5',
         fontWeight: 'bold'
     },
+
     loading: {
         height: '100vh',
         display: 'flex',
