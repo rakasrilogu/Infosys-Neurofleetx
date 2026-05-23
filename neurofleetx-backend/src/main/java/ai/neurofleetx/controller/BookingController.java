@@ -87,11 +87,23 @@ public class BookingController {
                             vehicleId
                     );
 
-            // ✅ Send Email
-            emailService.sendBookingNotificationToAdmin(
-                    savedBooking
-            );
+            // ✅ Send Email (DO NOT FAIL BOOKING IF EMAIL FAILS)
+            try {
 
+                emailService.sendBookingNotificationToAdmin(
+                        savedBooking
+                );
+
+            } catch (Exception mailError) {
+
+                System.out.println(
+                        "EMAIL FAILED BUT BOOKING SAVED"
+                );
+
+                mailError.printStackTrace();
+            }
+
+            // ✅ SUCCESS RESPONSE
             return ResponseEntity.ok(savedBooking);
 
         } catch (Exception e) {
@@ -104,4 +116,6 @@ public class BookingController {
         }
     }
 }
+```
+
 
