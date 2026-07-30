@@ -94,8 +94,61 @@ public class RouteService {
         double distance = targetNode.getMinDistance();
         double duration = distance / 60.0;
 
+        // Fetch actual road geometry for each edge in the Dijkstra path
+        List<List<Double>> combinedGeometry = fetchGeometryForPath(path);
+
         Route saved = routeRepository.save(new Route(path.toString(), distance, duration));
-        return new RouteResponse(saved.getId(), path, distance, duration);
+        return new RouteResponse(saved.getId(), path, distance, duration, combinedGeometry);
+    }
+
+    private List<List<Double>> fetchGeometryForPath(List<String> path) {
+        List<List<Double>> combinedGeometry = new ArrayList<>();
+
+        for (int i = 0; i < path.size() - 1; i++) {
+            String cityA = path.get(i);
+            String cityB = path.get(i + 1);
+
+            try {
+                double[] coordsA = geocodingService.getCoordinates(cityA);
+                double[] coordsB = geocodingService.getCoordinates(cityB);
+
+                if (coordsA == null || coordsB == null) continue;
+
+                String osrmUrl = OSRM_BASE_URL
+                        + coordsA[1] + "," + coordsA[0]
+                        + ";" + coordsB[1] + "," + coordsB[0]
+                        + "?overview=full&geometries=geojson&steps=false";
+
+                HttpHeaders headers = new HttpHeaders();
+                headers.set("User-Agent", "NeuroFleetX_App");
+                HttpEntity<String> entity = new HttpEntity<>(headers);
+
+                ResponseEntity<String> response = restTemplate.exchange(
+                        osrmUrl, HttpMethod.GET, entity, String.class);
+
+                JsonNode root = objectMapper.readTree(response.getBody());
+
+                if (root.get("code") != null && root.get("code").asText().equals("Ok")) {
+                    JsonNode geometryNode = root.get("routes").get(0).get("geometry");
+                    if (geometryNode != null && geometryNode.has("coordinates")) {
+                        JsonNode coords = geometryNode.get("coordinates");
+                        // Skip first point of subsequent segments to avoid duplicate points at junctions
+                        int startIdx = (i > 0 && combinedGeometry.size() > 0) ? 1 : 0;
+                        for (int j = startIdx; j < coords.size(); j++) {
+                            JsonNode coord = coords.get(j);
+                            combinedGeometry.add(Arrays.asList(
+                                    coord.get(1).asDouble(),
+                                    coord.get(0).asDouble()
+                            ));
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Failed to fetch geometry for " + cityA + " -> " + cityB + ": " + e.getMessage());
+            }
+        }
+
+        return combinedGeometry;
     }
 
     private RouteResponse runOsrmFallback(String source, String destination,
