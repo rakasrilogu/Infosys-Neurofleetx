@@ -7,6 +7,7 @@ public class RouteResponse {
     private List<String> path;
     private Double totalDistance;
     private Double estimatedTime;
+    private List<List<Double>> geometry;
 
     public RouteResponse() {}
 
@@ -15,6 +16,15 @@ public class RouteResponse {
         this.path = path;
         this.totalDistance = totalDistance;
         this.estimatedTime = estimatedTime;
+        this.geometry = null;
+    }
+
+    public RouteResponse(Long id, List<String> path, Double totalDistance, Double estimatedTime, List<List<Double>> geometry) {
+        this.id = id;
+        this.path = path;
+        this.totalDistance = totalDistance;
+        this.estimatedTime = estimatedTime;
+        this.geometry = geometry;
     }
 
     public Long getId() { return id; }
@@ -28,6 +38,9 @@ public class RouteResponse {
 
     public Double getEstimatedTime() { return estimatedTime; }
     public void setEstimatedTime(Double estimatedTime) { this.estimatedTime = estimatedTime; }
+
+    public List<List<Double>> getGeometry() { return geometry; }
+    public void setGeometry(List<List<Double>> geometry) { this.geometry = geometry; }
 
     // Aliases so frontend response.data.distance and response.data.duration work
     public Double getDistance() { return totalDistance; }

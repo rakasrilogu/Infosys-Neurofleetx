@@ -15,8 +15,6 @@ L.Icon.Default.mergeOptions({
 
 const API_URL = process.env.REACT_APP_API_URL;
 
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
 const FitBounds = ({ coords }) => {
   const map = useMap();
   React.useEffect(() => {
@@ -40,7 +38,7 @@ const RouteOptimization = () => {
       const response = await axios.get(
         "https://nominatim.openstreetmap.org/search",
         {
-          params: { q: cityName, format: "json", limit: 1, countrycodes: "in" },
+          params: { q: cityName, format: "json", limit: 1 },
         }
       );
       if (response.data && response.data.length > 0) {
@@ -81,25 +79,39 @@ const RouteOptimization = () => {
       const response = await axios.post(`${API_URL}/routes/optimize`, payload, config);
 
       const cityPath = response.data.path;
-      const pathWithCoords = [];
-      const failedCities = [];
+      const roadGeometry = response.data.geometry;
 
-      for (let i = 0; i < cityPath.length; i++) {
-        const cityName = cityPath[i];
-        setStatusMsg(`Mapping city ${i + 1} of ${cityPath.length}: ${cityName}...`);
-        const coords = await geocodeCity(cityName);
-        if (coords) {
-          pathWithCoords.push(coords);
-        } else {
-          failedCities.push(cityName);
-          pathWithCoords.push(null);
+      let polylineCoords = [];
+      let markers = [];
+
+      if (roadGeometry && roadGeometry.length > 0) {
+        // OSRM returned full road geometry - use it for the polyline
+        polylineCoords = roadGeometry;
+
+        // Geocode only start and end cities for markers
+        setStatusMsg("Mapping start city...");
+        const startCoords = await geocodeCity(cityPath[0]);
+        setStatusMsg("Mapping end city...");
+        const endCoords = await geocodeCity(cityPath[cityPath.length - 1]);
+
+        if (startCoords) markers.push({ name: cityPath[0], coords: startCoords });
+        if (endCoords) markers.push({ name: cityPath[cityPath.length - 1], coords: endCoords });
+      } else {
+        // Dijkstra on DB graph - geocode all path cities for markers and polyline
+        const pathWithCoords = [];
+        for (let i = 0; i < cityPath.length; i++) {
+          const cityName = cityPath[i];
+          setStatusMsg(`Mapping city ${i + 1} of ${cityPath.length}: ${cityName}...`);
+          const coords = await geocodeCity(cityName);
+          if (coords) {
+            pathWithCoords.push(coords);
+            markers.push({ name: cityName, coords });
+          }
         }
-        if (i < cityPath.length - 1) await delay(1000);
+        polylineCoords = pathWithCoords;
       }
 
-      const validCoords = pathWithCoords.filter(Boolean);
-
-      if (validCoords.length < 2) {
+      if (polylineCoords.length < 2) {
         setError("Could not resolve enough cities on the map. Check city names.");
         setLoading(false);
         setStatusMsg("");
@@ -108,11 +120,10 @@ const RouteOptimization = () => {
 
       setResult({
         pathNames: cityPath,
-        coordsRaw: pathWithCoords,
-        coords: validCoords,
+        polylineCoords,
+        markers,
         distance: response.data.distance,
         duration: response.data.duration,
-        failedCities,
       });
     } catch (err) {
       console.error("Routing Error:", err);
@@ -136,7 +147,7 @@ const RouteOptimization = () => {
       <div style={{ width: "320px", padding: "20px", background: "#f8f9fa", overflowY: "auto" }}>
         <h2 style={{ fontSize: "1.3rem", fontWeight: 800, marginBottom: 8 }}>Route Optimization</h2>
         <p style={{ fontSize: "0.8rem", color: "#6b7280", marginBottom: 16 }}>
-          Enter any two cities worldwide. Routes are calculated using real road data.
+          Enter any two cities worldwide. Routes follow actual roads.
         </p>
 
         <input
@@ -205,29 +216,20 @@ const RouteOptimization = () => {
                 </span>
               ))}
             </div>
-
-            {result.failedCities.length > 0 && (
-              <div style={{ marginTop: 12, padding: 8, background: "#fefce8", borderRadius: 6, fontSize: "0.8rem", color: "#a16207" }}>
-                Could not map: {result.failedCities.join(", ")}
-              </div>
-            )}
           </div>
         )}
       </div>
 
       <MapContainer center={[20.5937, 78.9629]} zoom={5} style={{ flex: 1 }}>
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-        {result && result.coords.length > 0 && (
+        {result && result.polylineCoords.length > 0 && (
           <>
-            <FitBounds coords={result.coords} />
-            <Polyline positions={result.coords} color="#2563eb" weight={4} />
-            {result.coords.map((pos, idx) => (
-              <Marker key={idx} position={pos}>
+            <FitBounds coords={result.polylineCoords} />
+            <Polyline positions={result.polylineCoords} color="#2563eb" weight={4} opacity={0.8} />
+            {result.markers.map((m, idx) => (
+              <Marker key={idx} position={m.coords}>
                 <Popup>
-                  <strong>Stop #{idx + 1}</strong>
-                  {result.pathNames[idx] && (
-                    <div style={{ textTransform: "capitalize" }}>{result.pathNames[idx]}</div>
-                  )}
+                  <strong style={{ textTransform: "capitalize" }}>{m.name}</strong>
                 </Popup>
               </Marker>
             ))}

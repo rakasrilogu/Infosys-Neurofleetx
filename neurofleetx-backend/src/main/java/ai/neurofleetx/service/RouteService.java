@@ -139,6 +139,17 @@ public class RouteService {
             double distanceKm = route.get("distance").asDouble() / 1000.0;
             double durationHrs = route.get("duration").asDouble() / 3600.0;
 
+            // Extract full road geometry (actual road path coordinates)
+            List<List<Double>> geometry = new ArrayList<>();
+            JsonNode geometryNode = route.get("geometry");
+            if (geometryNode != null && geometryNode.has("coordinates")) {
+                JsonNode coords = geometryNode.get("coordinates");
+                for (JsonNode coord : coords) {
+                    // OSRM returns [lon, lat], Leaflet needs [lat, lon]
+                    geometry.add(Arrays.asList(coord.get(1).asDouble(), coord.get(0).asDouble()));
+                }
+            }
+
             JsonNode waypoints = root.get("waypoints");
             List<String> path = new ArrayList<>();
             path.add(source);
@@ -154,7 +165,7 @@ public class RouteService {
             path.add(destination);
 
             Route saved = routeRepository.save(new Route(path.toString(), distanceKm, durationHrs));
-            return new RouteResponse(saved.getId(), path, distanceKm, durationHrs);
+            return new RouteResponse(saved.getId(), path, distanceKm, durationHrs, geometry);
 
         } catch (RuntimeException e) {
             throw e;
