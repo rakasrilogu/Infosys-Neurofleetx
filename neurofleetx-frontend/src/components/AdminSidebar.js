@@ -1,24 +1,19 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { FaChartBar, FaSignOutAlt } from "react-icons/fa";
+import { FaChartBar, FaSignOutAlt, FaRoad } from "react-icons/fa";
 
 const AdminSidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Menu now only contains Dashboard
   const menu = [
-    { 
-      name: "Dashboard", 
-      icon: <FaChartBar />, 
-      path: "/admin-dashboard" 
-    }
+    { name: "Dashboard", icon: <FaChartBar />, path: "/admin-dashboard" },
+    { name: "Road Network", icon: <FaRoad />, path: "/admin-road-network" },
   ];
 
   const handleLogout = () => {
     localStorage.clear();
     navigate("/login");
-    // Using window.location.href ensures a clean state reset on logout
     window.location.href = "/login";
   };
 
@@ -27,7 +22,6 @@ const AdminSidebar = () => {
       <div className="p-6 border-b border-slate-800 text-2xl font-black text-red-500 italic tracking-tighter">
         NEUROFLEETX
       </div>
-
       <nav className="flex-1 mt-4 px-4">
         {menu.map((item) => (
           <div
@@ -44,12 +38,9 @@ const AdminSidebar = () => {
           </div>
         ))}
       </nav>
-
       <div className="p-4 border-t border-slate-800">
-        <button
-          onClick={handleLogout}
-          className="w-full p-3 bg-slate-800 hover:bg-red-600 rounded-xl flex items-center justify-center gap-2 font-bold transition-colors duration-200"
-        >
+        <button onClick={handleLogout}
+          className="w-full p-3 bg-slate-800 hover:bg-red-600 rounded-xl flex items-center justify-center gap-2 font-bold transition-colors duration-200">
           <FaSignOutAlt /> Logout
         </button>
       </div>

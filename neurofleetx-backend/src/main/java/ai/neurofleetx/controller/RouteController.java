@@ -6,10 +6,10 @@ import ai.neurofleetx.service.RouteService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/routes")
-
-// ✅ Allow both local + deployed frontend
 @CrossOrigin(origins = {
         "http://localhost:3000",
         "https://infosys-neurofleetx.vercel.app"
@@ -23,15 +23,19 @@ public class RouteController {
     }
 
     @PostMapping("/optimize")
-    public ResponseEntity<RouteResponse> optimizeRoute(@RequestBody RouteRequest request) {
+    public ResponseEntity<?> optimizeRoute(@RequestBody RouteRequest request) {
         try {
             RouteResponse response = routeService.optimize(
                     request.getStartCity(),
-                    request.getEndCity()
+                    request.getEndCity(),
+                    request.getStartLat(),
+                    request.getStartLng(),
+                    request.getEndLat(),
+                    request.getEndLng()
             );
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
 }

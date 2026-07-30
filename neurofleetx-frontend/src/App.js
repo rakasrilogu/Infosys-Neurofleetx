@@ -1,10 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { Toaster } from "react-hot-toast"; 
+import { Toaster } from "react-hot-toast";
 
-/* ===============================
-    USER PAGES
-================================= */
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -14,25 +11,16 @@ import LiveTracking from "./pages/LiveTracking";
 import RouteOptimization from "./pages/RouteOptimization";
 import BookingPage from "./pages/BookingPage";
 import HealthCheckPage from "./pages/HealthCheckPage";
-
-/* ===============================
-    ADMIN PAGES
-================================= */
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminRoadNetwork from "./pages/AdminRoadNetwork";
 
-/* ===============================
-    AUTH HELPERS
-================================= */
 const ProtectedRoute = ({ children, isAuthenticated, loading, requiredRole }) => {
   const userRole = localStorage.getItem("role");
-
   if (loading) return <div className="h-screen flex items-center justify-center bg-slate-950 text-white font-mono">NEURO-SYNCING...</div>;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-
   if (requiredRole && userRole !== requiredRole) {
     return <Navigate to={userRole === "ADMIN" ? "/admin-dashboard" : "/"} replace />;
   }
-
   return children;
 };
 
@@ -45,9 +33,6 @@ const AuthRedirect = ({ children, isAuthenticated, loading }) => {
   return children;
 };
 
-/* ===============================
-    MAIN APP
-================================= */
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -67,48 +52,31 @@ const App = () => {
 
   return (
     <>
-      <Toaster 
-        position="top-right" 
-        reverseOrder={false} 
+      <Toaster
+        position="top-right"
+        reverseOrder={false}
         toastOptions={{
-          style: {
-            background: '#0f172a',
-            color: '#fff',
-            border: '1px solid #1e293b'
-          },
+          style: { background: '#0f172a', color: '#fff', border: '1px solid #1e293b' },
         }}
       />
-      
-      {/* AiListener removed from here */}
-
       <Routes>
-        <Route 
-          path="/login" 
-          element={
-            <AuthRedirect isAuthenticated={isAuthenticated} loading={loading}>
-              <Login setIsAuthenticated={setIsAuthenticated} />
-            </AuthRedirect>
-          } 
-        />
-        <Route 
-          path="/signup" 
-          element={
-            <AuthRedirect isAuthenticated={isAuthenticated} loading={loading}>
-              <Signup />
-            </AuthRedirect>
-          } 
-        />
+        <Route path="/login" element={
+          <AuthRedirect isAuthenticated={isAuthenticated} loading={loading}>
+            <Login setIsAuthenticated={setIsAuthenticated} />
+          </AuthRedirect>
+        } />
+        <Route path="/signup" element={
+          <AuthRedirect isAuthenticated={isAuthenticated} loading={loading}>
+            <Signup />
+          </AuthRedirect>
+        } />
         <Route path="/forgot-password" element={<ForgotPassword />} />
 
-        {/* USER AREA */}
-        <Route 
-          path="/" 
-          element={
-            <ProtectedRoute isAuthenticated={isAuthenticated} loading={loading}>
-              <DashboardLayout onLogout={handleLogout} />
-            </ProtectedRoute>
-          }
-        >
+        <Route path="/" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated} loading={loading}>
+            <DashboardLayout onLogout={handleLogout} />
+          </ProtectedRoute>
+        }>
           <Route index element={<DashboardHome />} />
           <Route path="live-tracking" element={<LiveTracking />} />
           <Route path="booking" element={<BookingPage />} />
@@ -116,16 +84,16 @@ const App = () => {
           <Route path="health-check" element={<HealthCheckPage />} />
         </Route>
 
-        {/* ADMIN AREA */}
-        <Route 
-          path="/admin-dashboard" 
-          element={
-            <ProtectedRoute isAuthenticated={isAuthenticated} loading={loading} requiredRole="ADMIN">
-              <AdminDashboard />
-            </ProtectedRoute>
-          } 
-        />
-
+        <Route path="/admin-dashboard" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated} loading={loading} requiredRole="ADMIN">
+            <AdminDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin-road-network" element={
+          <ProtectedRoute isAuthenticated={isAuthenticated} loading={loading} requiredRole="ADMIN">
+            <AdminRoadNetwork />
+          </ProtectedRoute>
+        } />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
