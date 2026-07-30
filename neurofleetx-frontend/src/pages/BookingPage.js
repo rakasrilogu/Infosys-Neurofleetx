@@ -11,6 +11,7 @@ const BookingPage = () => {
     const [bookingData, setBookingData] = useState({
         customerName: '',
         customerPhone: '',
+        email: '',
         pickupLocation: '',
         dropLocation: '',
         scheduledDate: '',
@@ -233,6 +234,22 @@ const BookingPage = () => {
                                 />
 
                             </div>
+
+                        </div>
+
+                        <div style={styles.inputGroup}>
+
+                            <label style={styles.label}>
+                                Email (for confirmation)
+                            </label>
+
+                            <input
+                                name="email"
+                                type="email"
+                                placeholder="customer@email.com"
+                                onChange={handleInputChange}
+                                style={styles.input}
+                            />
 
                         </div>
 

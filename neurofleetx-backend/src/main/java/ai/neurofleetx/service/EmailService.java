@@ -18,13 +18,19 @@ public class EmailService {
     @Value("${app.email.from}")
     private String fromEmail;
 
-    @Value("${app.driver.email}")
-    private String driverEmail;
-
-    private static final String ADMIN_EMAIL = "rakasrilogu@gmail.com";
+    @Value("${ADMIN_EMAIL:rakasrilogu@gmail.com}")
+    private String adminEmail;
 
     public void sendBookingNotificationToAdmin(Booking booking) {
-        sendEmail(ADMIN_EMAIL, "🚗 Admin Alert: New Booking #" + booking.getBookingId(), buildBody(booking, "ADMIN"));
+        sendEmail(adminEmail, "🚗 Admin Alert: New Booking #" + booking.getBookingId(), buildAdminBody(booking));
+    }
+
+    public void sendBookingConfirmationToCustomer(Booking booking) {
+        if (booking.getEmail() == null || booking.getEmail().isEmpty()) {
+            System.out.println("⚠️ No customer email provided, skipping customer notification.");
+            return;
+        }
+        sendEmail(booking.getEmail(), "✅ Booking Confirmed #" + booking.getBookingId(), buildCustomerBody(booking));
     }
 
     private void sendEmail(String to, String subject, String body) {
@@ -42,13 +48,40 @@ public class EmailService {
         }
     }
 
-    private String buildBody(Booking booking, String role) {
-        return "<html><body style='font-family: Arial; padding: 20px;'>" +
-               "<h2>" + role + " NOTIFICATION</h2>" +
-               "<p><strong>Customer:</strong> " + booking.getCustomerName() + "</p>" +
-               "<p><strong>Pickup:</strong> " + booking.getPickupLocation() + "</p>" +
-               "<p><strong>Drop:</strong> " + booking.getDropLocation() + "</p>" +
-               "<p><strong>Date:</strong> " + booking.getScheduledDate() + "</p>" +
-               "</body></html>";
+    private String buildAdminBody(Booking booking) {
+        return "<html><body style='font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5;'>" +
+               "<div style='max-width: 600px; margin: auto; background: white; border-radius: 12px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);'>" +
+               "<h2 style='color: #dc2626; margin-top: 0;'>🚗 New Booking Alert</h2>" +
+               "<hr style='border: 1px solid #e5e7eb;'>" +
+               "<table style='width: 100%; font-size: 15px;'>" +
+               "<tr><td style='padding: 8px 0; color: #6b7280;'>Booking ID</td><td style='padding: 8px 0; font-weight: bold;'>#" + booking.getBookingId() + "</td></tr>" +
+               "<tr><td style='padding: 8px 0; color: #6b7280;'>Customer</td><td style='padding: 8px 0; font-weight: bold;'>" + booking.getCustomerName() + "</td></tr>" +
+               "<tr><td style='padding: 8px 0; color: #6b7280;'>Phone</td><td style='padding: 8px 0;'>" + booking.getCustomerPhone() + "</td></tr>" +
+               "<tr><td style='padding: 8px 0; color: #6b7280;'>Email</td><td style='padding: 8px 0;'>" + (booking.getEmail() != null ? booking.getEmail() : "N/A") + "</td></tr>" +
+               "<tr><td style='padding: 8px 0; color: #6b7280;'>Pickup</td><td style='padding: 8px 0; font-weight: bold;'>" + booking.getPickupLocation() + "</td></tr>" +
+               "<tr><td style='padding: 8px 0; color: #6b7280;'>Drop</td><td style='padding: 8px 0; font-weight: bold;'>" + booking.getDropLocation() + "</td></tr>" +
+               "<tr><td style='padding: 8px 0; color: #6b7280;'>Date</td><td style='padding: 8px 0;'>" + booking.getScheduledDate() + "</td></tr>" +
+               "<tr><td style='padding: 8px 0; color: #6b7280;'>Vehicle</td><td style='padding: 8px 0;'>" + (booking.getVehicle() != null ? booking.getVehicle().getName() : "N/A") + "</td></tr>" +
+               "</table>" +
+               "</div></body></html>";
+    }
+
+    private String buildCustomerBody(Booking booking) {
+        return "<html><body style='font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5;'>" +
+               "<div style='max-width: 600px; margin: auto; background: white; border-radius: 12px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);'>" +
+               "<h2 style='color: #16a34a; margin-top: 0;'>✅ Booking Confirmed!</h2>" +
+               "<p style='color: #4b5563;'>Hi <strong>" + booking.getCustomerName() + "</strong>,</p>" +
+               "<p style='color: #4b5563;'>Your booking has been confirmed. Here are the details:</p>" +
+               "<hr style='border: 1px solid #e5e7eb;'>" +
+               "<table style='width: 100%; font-size: 15px;'>" +
+               "<tr><td style='padding: 8px 0; color: #6b7280;'>Booking ID</td><td style='padding: 8px 0; font-weight: bold;'>#" + booking.getBookingId() + "</td></tr>" +
+               "<tr><td style='padding: 8px 0; color: #6b7280;'>Pickup</td><td style='padding: 8px 0; font-weight: bold;'>" + booking.getPickupLocation() + "</td></tr>" +
+               "<tr><td style='padding: 8px 0; color: #6b7280;'>Drop</td><td style='padding: 8px 0; font-weight: bold;'>" + booking.getDropLocation() + "</td></tr>" +
+               "<tr><td style='padding: 8px 0; color: #6b7280;'>Date</td><td style='padding: 8px 0;'>" + booking.getScheduledDate() + "</td></tr>" +
+               "<tr><td style='padding: 8px 0; color: #6b7280;'>Vehicle</td><td style='padding: 8px 0;'>" + (booking.getVehicle() != null ? booking.getVehicle().getName() : "Assigned Soon") + "</td></tr>" +
+               "</table>" +
+               "<hr style='border: 1px solid #e5e7eb;'>" +
+               "<p style='color: #6b7280; font-size: 13px;'>Thank you for choosing NeuroFleetX. Safe travels!</p>" +
+               "</div></body></html>";
     }
 }

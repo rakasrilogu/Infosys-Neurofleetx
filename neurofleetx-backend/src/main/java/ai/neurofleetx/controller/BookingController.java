@@ -1,5 +1,3 @@
-
-
 package ai.neurofleetx.controller;
 
 import ai.neurofleetx.model.Booking;
@@ -15,7 +13,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/bookings")
-
 @CrossOrigin(origins = {
         "http://localhost:3000",
         "https://infosys-neurofleetx.vercel.app"
@@ -29,92 +26,52 @@ public class BookingController {
     private EmailService emailService;
 
     @PostMapping
-    public ResponseEntity<?> createBooking(
-            @RequestBody Map<String, Object> payload) {
-
+    public ResponseEntity<?> createBooking(@RequestBody Map<String, Object> payload) {
         try {
-
             System.out.println("===== BOOKING PAYLOAD =====");
             System.out.println(payload);
 
-            // ✅ Validate Vehicle ID
-            if (payload.get("vehicleId") == null ||
-                    payload.get("vehicleId").toString().isEmpty()) {
-
-                return ResponseEntity
-                        .badRequest()
-                        .body("Vehicle ID missing");
+            if (payload.get("vehicleId") == null || payload.get("vehicleId").toString().isEmpty()) {
+                return ResponseEntity.badRequest().body("Vehicle ID missing");
             }
 
             Booking booking = new Booking();
+            booking.setCustomerName(payload.get("customerName").toString());
+            booking.setCustomerPhone(payload.get("customerPhone").toString());
+            booking.setPickupLocation(payload.get("pickupLocation").toString());
+            booking.setDropLocation(payload.get("dropLocation").toString());
 
-            // ✅ Customer Name
-            booking.setCustomerName(
-                    payload.get("customerName").toString()
-            );
+            // Read customer email (optional)
+            if (payload.containsKey("email") && payload.get("email") != null && !payload.get("email").toString().isEmpty()) {
+                booking.setEmail(payload.get("email").toString());
+            }
 
-            // ✅ Customer Phone
-            booking.setCustomerPhone(
-                    payload.get("customerPhone").toString()
-            );
+            String scheduledDate = payload.get("scheduledDate").toString();
+            booking.setScheduledDate(LocalDateTime.parse(scheduledDate));
 
-            // ✅ Pickup Location
-            booking.setPickupLocation(
-                    payload.get("pickupLocation").toString()
-            );
+            Integer vehicleId = Integer.valueOf(payload.get("vehicleId").toString());
+            Booking savedBooking = bookingService.createBookingWithVehicleId(booking, vehicleId);
 
-            // ✅ Drop Location
-            booking.setDropLocation(
-                    payload.get("dropLocation").toString()
-            );
-
-            // ✅ Scheduled Date
-            String scheduledDate =
-                    payload.get("scheduledDate").toString();
-
-            booking.setScheduledDate(
-                    LocalDateTime.parse(scheduledDate)
-            );
-
-            // ✅ Vehicle ID
-            Integer vehicleId =
-                    Integer.valueOf(
-                            payload.get("vehicleId").toString()
-                    );
-
-            // ✅ Save Booking
-            Booking savedBooking =
-                    bookingService.createBookingWithVehicleId(
-                            booking,
-                            vehicleId
-                    );
-
-            // ✅ Send Email (DO NOT FAIL BOOKING IF EMAIL FAILS)
+            // Send email to admin
             try {
-
-                emailService.sendBookingNotificationToAdmin(
-                        savedBooking
-                );
-
+                emailService.sendBookingNotificationToAdmin(savedBooking);
             } catch (Exception mailError) {
-
-                System.out.println(
-                        "EMAIL FAILED BUT BOOKING SAVED"
-                );
-
+                System.out.println("ADMIN EMAIL FAILED BUT BOOKING SAVED");
                 mailError.printStackTrace();
             }
 
-            // ✅ SUCCESS RESPONSE
+            // Send confirmation email to customer
+            try {
+                emailService.sendBookingConfirmationToCustomer(savedBooking);
+            } catch (Exception mailError) {
+                System.out.println("CUSTOMER EMAIL FAILED BUT BOOKING SAVED");
+                mailError.printStackTrace();
+            }
+
             return ResponseEntity.ok(savedBooking);
-
         } catch (Exception e) {
-
             e.printStackTrace();
-
-            return ResponseEntity
-                    .badRequest()
-                    .body("Booking Error: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Booking Error: " + e.getMessage());
         }
     }
 }
