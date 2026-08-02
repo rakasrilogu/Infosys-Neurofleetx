@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Build output
+target/
+build/
+dist/
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.class
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment files
+.env
+.env.local
+
+# Maven/Gradle
+.mvn/wrapper/maven-wrapper.jar
+.gradle/
