@@ -1,6 +1,8 @@
 package ai.neurofleetx.service;
 
 import ai.neurofleetx.model.Booking;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -11,6 +13,8 @@ import jakarta.mail.internet.MimeMessage;
 
 @Service
 public class EmailService {
+
+    private static final Logger logger = LoggerFactory.getLogger(EmailService.class);
 
     @Autowired
     private JavaMailSender mailSender;
@@ -27,10 +31,10 @@ public class EmailService {
 
     public void sendBookingConfirmationToCustomer(Booking booking) {
         if (booking.getEmail() == null || booking.getEmail().isEmpty()) {
-            System.out.println("⚠️ No customer email provided, skipping customer notification.");
+            logger.warn("No customer email provided for booking #{}, skipping customer notification.", booking.getBookingId());
             return;
         }
-        sendEmail(booking.getEmail(), "✅ Booking Confirmed #" + booking.getBookingId(), buildCustomerBody(booking));
+        sendEmail(booking.getEmail(), "Booking Confirmed #" + booking.getBookingId(), buildCustomerBody(booking));
     }
 
     private void sendEmail(String to, String subject, String body) {
@@ -42,9 +46,11 @@ public class EmailService {
             helper.setSubject(subject);
             helper.setText(body, true);
             mailSender.send(message);
-            System.out.println("✅ Mail sent to: " + to);
+            logger.info("Mail sent successfully to: {}", to);
         } catch (MessagingException e) {
-            System.err.println("❌ Mail Error: " + e.getMessage());
+            logger.error("Failed to send email to {}: {}", to, e.getMessage(), e);
+        } catch (Exception e) {
+            logger.error("Unexpected error sending email to {}: {}", to, e.getMessage(), e);
         }
     }
 

@@ -86,6 +86,7 @@ public class SecurityConfig {
 
                 // Protected endpoints
                 .requestMatchers("/api/vehicles/**").hasAnyRole("USER", "ADMIN")
+                .requestMatchers("/api/bookings/**").hasAnyRole("USER", "ADMIN")
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
                 .anyRequest().authenticated()

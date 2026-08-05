@@ -308,7 +308,7 @@ const BookingPage = () => {
 
                             CONFIRM TRIP
 
-                            {selectedDriver
+                            {selectedDriver && selectedDriver.driverName
                                 ? ` WITH ${selectedDriver.driverName.toUpperCase()}`
                                 : ""}
 
@@ -362,13 +362,13 @@ const BookingPage = () => {
                             >
 
                                 <div style={styles.avatar}>
-                                    {driver.driverName.charAt(0)}
+                                    {driver.driverName ? driver.driverName.charAt(0) : "?"}
                                 </div>
 
                                 <div style={styles.driverInfo}>
 
                                     <span style={styles.dName}>
-                                        {driver.driverName}
+                                        {driver.driverName || "Unknown Driver"}
                                     </span>
 
                                     <span style={styles.vName}>

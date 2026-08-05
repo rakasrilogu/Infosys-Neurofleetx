@@ -4,6 +4,8 @@ import ai.neurofleetx.model.Booking;
 import ai.neurofleetx.service.BookingService;
 import ai.neurofleetx.service.EmailService;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +21,8 @@ import java.util.Map;
 })
 public class BookingController {
 
+    private static final Logger logger = LoggerFactory.getLogger(BookingController.class);
+
     @Autowired
     private BookingService bookingService;
 
@@ -28,8 +32,7 @@ public class BookingController {
     @PostMapping
     public ResponseEntity<?> createBooking(@RequestBody Map<String, Object> payload) {
         try {
-            System.out.println("===== BOOKING PAYLOAD =====");
-            System.out.println(payload);
+            logger.info("Booking payload received: {}", payload);
 
             if (payload.get("vehicleId") == null || payload.get("vehicleId").toString().isEmpty()) {
                 return ResponseEntity.badRequest().body("Vehicle ID missing");
@@ -56,21 +59,19 @@ public class BookingController {
             try {
                 emailService.sendBookingNotificationToAdmin(savedBooking);
             } catch (Exception mailError) {
-                System.out.println("ADMIN EMAIL FAILED BUT BOOKING SAVED");
-                mailError.printStackTrace();
+                logger.error("ADMIN EMAIL FAILED BUT BOOKING SAVED: {}", mailError.getMessage(), mailError);
             }
 
             // Send confirmation email to customer
             try {
                 emailService.sendBookingConfirmationToCustomer(savedBooking);
             } catch (Exception mailError) {
-                System.out.println("CUSTOMER EMAIL FAILED BUT BOOKING SAVED");
-                mailError.printStackTrace();
+                logger.error("CUSTOMER EMAIL FAILED BUT BOOKING SAVED: {}", mailError.getMessage(), mailError);
             }
 
             return ResponseEntity.ok(savedBooking);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Booking creation failed: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().body("Booking Error: " + e.getMessage());
         }
     }
