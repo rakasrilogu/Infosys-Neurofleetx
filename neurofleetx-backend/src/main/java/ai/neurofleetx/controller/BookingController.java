@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping("/api/bookings")
@@ -55,19 +56,22 @@ public class BookingController {
             Integer vehicleId = Integer.valueOf(payload.get("vehicleId").toString());
             Booking savedBooking = bookingService.createBookingWithVehicleId(booking, vehicleId);
 
-            // Send email to admin
-            try {
-                emailService.sendBookingNotificationToAdmin(savedBooking);
-            } catch (Exception mailError) {
-                logger.error("ADMIN EMAIL FAILED BUT BOOKING SAVED: {}", mailError.getMessage(), mailError);
-            }
-
-            // Send confirmation email to customer
-            try {
-                emailService.sendBookingConfirmationToCustomer(savedBooking);
-            } catch (Exception mailError) {
-                logger.error("CUSTOMER EMAIL FAILED BUT BOOKING SAVED: {}", mailError.getMessage(), mailError);
-            }
+            // Send emails async — don't block the response
+            final Booking bookingRef = savedBooking;
+            CompletableFuture.runAsync(() -> {
+                try {
+                    emailService.sendBookingNotificationToAdmin(bookingRef);
+                } catch (Exception mailError) {
+                    logger.error("ADMIN EMAIL FAILED BUT BOOKING SAVED: {}", mailError.getMessage(), mailError);
+                }
+            });
+            CompletableFuture.runAsync(() -> {
+                try {
+                    emailService.sendBookingConfirmationToCustomer(bookingRef);
+                } catch (Exception mailError) {
+                    logger.error("CUSTOMER EMAIL FAILED BUT BOOKING SAVED: {}", mailError.getMessage(), mailError);
+                }
+            });
 
             return ResponseEntity.ok(savedBooking);
         } catch (Exception e) {
